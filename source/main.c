@@ -1,8 +1,8 @@
 /*
  * main.c
  *
- *  Created on: 2018年9月27日
- *      Author: wfyjs001
+ *  Created on: 2018-09-27
+ *      Author: mlzmxy
  */
 
 #include "DSP2833x_Device.h"     // DSP2833x Headerfile Include File
@@ -75,7 +75,6 @@ void main(void)
 
     while (1)
     {
-
     }
 }
 
