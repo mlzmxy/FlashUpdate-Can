@@ -1,12 +1,21 @@
 /*
  * main.c
  *
- *  Created on: 2018-09-27
+ *  Created on: 2018-10-05
  *      Author: mlzmxy
  */
 
 #include "DSP2833x_Device.h"     // DSP2833x Headerfile Include File
 #include "DSP2833x_Examples.h"   // DSP2833x Examples Include File
+
+#include "Flash2833x_API_Config.h"    // F2833x Flash User Settings
+#include "Flash2833x_API_Library.h"   // Flash API include file
+#include "Example_Flash2833x_API.h"   // example include file
+
+#include "CanProc.h"
+
+#include <stdio.h>   // Standard headers
+
 
 void main(void)
 {
@@ -14,7 +23,7 @@ void main(void)
     InitSysCtrl();
 
     // Initialize GPIO
-//    InitECanGpio();
+    InitECanGpio();
 //    ConfigGPIO();
 
     // Disable CPU interrupts
@@ -31,23 +40,17 @@ void main(void)
     // Service Routines (ISR).
     InitPieVectTable();
 
-//    MemCopy(&RamfuncsLoadStart, &RamfuncsLoadEnd, &RamfuncsRunStart);
-//    InitFlash();
+    MemCopy(&RamfuncsLoadStart, &RamfuncsLoadEnd, &RamfuncsRunStart);
+    InitFlash();
 
     EALLOW;
 //    PieVectTable.TINT0 = &cpu_timer0_isr;
 //    PieVectTable.XINT13 = &cpu_timer1_isr;
-//    PieVectTable.ADCINT = &adc_isr;
-//    PieVectTable.ECAN0INTA = &ecan0a_isr;
-//    PieVectTable.ECAN0INTB = &ecan0b_isr;
-    //PieVectTable.EPWM1_INT = &epwm1_isr;
+    PieVectTable.ECAN0INTA = &ecan0a_isr;
     EDIS;
 
     // Initialize all the Device Peripherals
-//    InitAdc();
-//    ConfigAdc();
-//    InitEPwm();
-//    InitECan();
+    InitECan();
 
     // Init and configue CpuTimer0 and CpuTimer1
     InitCpuTimers();
@@ -58,24 +61,27 @@ void main(void)
     // Enable INT in PIE
     PieCtrlRegs.PIECTRL.bit.ENPIE = 1;  //enable PIE
     PieCtrlRegs.PIEIER1.bit.INTx7 = 1;  //CpuTimer0
-    PieCtrlRegs.PIEIER1.bit.INTx6 = 1;  //ADC
-    //PieCtrlRegs.PIEIER3.bit.INTx1 = 1;  //ePWM1 INT
     PieCtrlRegs.PIEIER9.bit.INTx5 = 1;  //ECAN0INTA  eCANA
-    PieCtrlRegs.PIEIER9.bit.INTx7 = 1;  //ECAN0INTB  eCANB
 
     IER |= M_INT1;  // Enable CPU Interrupt 1 - ADC CpuTimer0
-    //IER |= M_INT3;  // Enable CPU Interrupt 3 - EPWM
     IER |= M_INT9;  // Enable CPU Interrupt 9 - CAN
     IER |= M_INT13; // Enable CPU Interrupt 1 - CpuTimer1
 
     EINT;  // Enable Global interrupt INTM
     ERTM;  // Enable Global realtime interrupt DBGM
 
-    StartCpuTimer0();
-
     while (1)
     {
+        if(0x5A5A == (*(volatile Uint16*)(0x33FF7F)))
+        {
+            FlashUpdate();
+        }
+        else
+        {
+
+        }
     }
 }
+
 
 
