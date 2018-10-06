@@ -85,8 +85,8 @@ PAGE 0:    /* Program Memory */
    FLASHE      : origin = 0x318000, length = 0x008000     /* on-chip FLASH */
    FLASHD      : origin = 0x320000, length = 0x008000     /* on-chip FLASH */
    FLASHC      : origin = 0x328000, length = 0x008000     /* on-chip FLASH */
-   FLASHA      : origin = 0x338000, length = 0x007F7F     /* on-chip FLASH */
-   FLASHFLAG   : origin = 0x33FF7F, length = 0x000001     /* Part of FLASHA.  Flash update flag. */
+   FLASHA      : origin = 0x338000, length = 0x007F80     /* on-chip FLASH */
+   /*FLASHFLAG   : origin = 0x33FF7F, length = 0x000001*/     /* Part of FLASHA.  Flash update flag. */
    CSM_RSVD    : origin = 0x33FF80, length = 0x000076     /* Part of FLASHA.  Program with all 0x0000 when CSM is in use. */
    BEGIN       : origin = 0x33FFF6, length = 0x000002     /* Part of FLASHA.  Used for "boot to Flash" bootloader mode. */
    CSM_PWL     : origin = 0x33FFF8, length = 0x000008     /* Part of FLASHA.  CSM password locations in FLASHA */

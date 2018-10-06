@@ -26,7 +26,7 @@
 #include "CanProc.h"
 
 /*---- Standard headers -------------------------------------------------------*/
-#include <stdio.h>                              
+#include <stdio.h>
 
 /*--- Callback function.  Function specified by defining Flash_CallbackPtr */
 void MyCallbackFunction(void);
@@ -78,7 +78,8 @@ enum FLOW
     receiveData = 0x16,
     checkSum = 0x17,
     program = 0x18,
-    verify = 0x19
+    verify = 0x19,
+    updateDone = 0x20
 };
 enum FLOW update_flow = handshake;
 
@@ -89,9 +90,10 @@ void FlashUpdate()
     Uint16 *flash_ptr;     // Pointer to a location in flash
     Uint16 length;         // Number of 16-bit values to be programmed
     Uint16 versionHex;     // Version of the API in decimal encoded hex
+    Uint16 checkCode;      // CRC16 check code
     Uint16 i;
 
-    can_msg_data data = { { 0 }, { 0 } };
+    can_msg_data data;
 
     /*------------------------------------------------------------------
      Copy API Functions into SARAM
@@ -147,7 +149,8 @@ void FlashUpdate()
     {
         if (receive_flag)
         {
-            //关闭中断
+            DINT; //关闭全局中断
+
             receive_flag = 0;
             data.byte.b0 = receive_msg.data.byte.b0;
             data.byte.b1 = receive_msg.data.byte.b1;
@@ -182,7 +185,7 @@ void FlashUpdate()
                 else
                 {
                     data.byte.b1 = 0x0;
-                    Example_Error(status);
+                    //Example_Error(status);
                 }
 
                 break;
@@ -213,6 +216,7 @@ void FlashUpdate()
                 break;
             case erase:
                 status = Flash_Erase((SECTORC|SECTORD|SECTORE), &FlashStatus);
+                flash_ptr = Sector[2].StartAddr;
                 if (status == STATUS_SUCCESS)
                 {
                     data.byte.b1 = 0x55;
@@ -220,7 +224,7 @@ void FlashUpdate()
                 else
                 {
                     data.byte.b1 = 0x0;
-                    Example_Error(status);
+                    //Example_Error(status);
                 }
                 break;
             case dataBlockSize:
@@ -235,7 +239,6 @@ void FlashUpdate()
                     {
                         data.byte.b1 = 0x55;
                         buffer[i] = data.byte.b4 + (data.byte.b5 << 8);
-
                         buffer[i + 1] = data.byte.b6 + (data.byte.b7 << 8);
                         i += 2;
                     }
@@ -252,304 +255,60 @@ void FlashUpdate()
                 }
                 break;
             case checkSum:
+                CRC16(buffer, length, &checkCode);
+                if(checkCode == (data.byte.b2 + (data.byte.b3 << 8)))
+                {
+                    data.byte.b1 = 0x55;
+                }
+                else
+                {
+                    data.byte.b1 = 0x0;
+                }
                 break;
             case program:
+                if ((flash_ptr + length) <= Sector[4].EndAddr)
+                {
+                    status = Flash_Program(flash_ptr, buffer, length,
+                                           &FlashStatus);
+                    flash_ptr += length;
+                    if (status == STATUS_SUCCESS)
+                    {
+                        data.byte.b1 = 0x55;
+                    }
+                    else
+                    {
+                        data.byte.b1 = 0x0;
+                        //Example_Error(Status);
+                    }
+                }
+                else
+                {
+                    data.byte.b1 = 0x0;
+                }
                 break;
             case verify:
+                status = Flash_Verify(flash_ptr, buffer, length, &FlashStatus);
+                if (status == STATUS_SUCCESS)
+                {
+                    data.byte.b1 = 0x55;
+                }
+                else
+                {
+                    data.byte.b1 = 0x0;
+                    //Example_Error(Status);
+                }
+                break;
+            case updateDone:
+                data.byte.b1 = 0x55;
+                EnableDog();  //使能看门狗
                 break;
             default:
                 data.byte.b1 = 0x0;
             }
             Cana_send_data(&data);
+            EINT;  //开全局中断
         }
     }
-
-}
-
-/*------------------------------------------------------------------
- Example_CallFlashAPI
-
- This function will interface to the flash API.
-
- Parameters:
-
- Return Value:
-
- Notes:  This function will be executed from SARAM
- 
- -----------------------------------------------------------------*/
-
-#pragma CODE_SECTION(Example_CallFlashAPI,"ramfuncs");
-void Example_CallFlashAPI(void)
-{
-    Uint16 i;
-    Uint16 Status;
-    Uint16 *Flash_ptr;     // Pointer to a location in flash
-    Uint32 Length;         // Number of 16-bit values to be programmed
-    float32 Version;        // Version of the API in floating point
-    Uint16 VersionHex;     // Version of the API in decimal encoded hex
-
-    /*------------------------------------------------------------------
-     Toggle Test
-
-     The toggle test is run to verify the frequency configuration of
-     the API functions.
-
-     The selected pin will toggle at 10kHz (100uS cycle time) if the
-     API is configured correctly.
-
-     Example_ToggleTest() supports common output pins. Other pins can be used
-     by modifying the Example_ToggleTest() function or calling the Flash_ToggleTest()
-     function directly.
-
-     Select a pin that makes sense for the hardware platform being used.
-     
-     This test will run forever and not return, thus only run this test
-     to confirm frequency configuration and not during normal API use.
-     ------------------------------------------------------------------*/
-
-    // Example: Toggle GPIO0
-    // Example_ToggleTest(0);
-    // Example: Toggle GPIO10
-    // Example_ToggleTest(10);
-    // Example: Toggle GPIO15
-    // Example_ToggleTest(15);
-    // Example: Toggle GPIO31
-    // Example_ToggleTest(31);
-    // Example: Toggle GPIO34
-    // Example_ToggleTest(34);
-    /*------------------------------------------------------------------
-     Check the version of the API
-
-     Flash_APIVersion() returns the version in floating point.
-     FlashAPIVersionHex() returns the version as a decimal encoded hex.
-
-     FlashAPIVersionHex() can be used to avoid processing issues
-     associated with floating point values.
-     ------------------------------------------------------------------*/
-    VersionHex = Flash_APIVersionHex();
-    if (VersionHex != 0x0210)
-    {
-        // Unexpected API version
-        // Make a decision based on this info.
-        asm("    ESTOP0");
-    }
-
-    Version = Flash_APIVersion();
-    if (Version != (float32) 2.10)
-    {
-        // Unexpected API version
-        // Make a decision based on this info.
-        asm("    ESTOP0");
-    }
-
-    /*------------------------------------------------------------------
-     Before programming make sure the sectors are Erased.
-
-     ------------------------------------------------------------------*/
-
-    // Example: Erase Sector B,C
-    // Sectors A and D have the example code so leave them
-    // programmed.
-    // SECTORB, SECTORC are defined in Flash2833x_API_Library.h
-    Status = Flash_Erase((SECTORB|SECTORC), &FlashStatus);
-    if (Status != STATUS_SUCCESS)
-    {
-        Example_Error(Status);
-    }
-
-    /*------------------------------------------------------------------
-     Program Flash Examples
-
-     ------------------------------------------------------------------*/
-
-// A buffer can be supplied to the program function.  Each word is
-// programmed until the whole buffer is programmed or a problem is 
-// found.  If the buffer goes outside of the range of OTP or Flash
-// then nothing is done and an error is returned. 
-
-    // Example: Program 0x400 values in Flash Sector B 
-    // In this case just fill a buffer with data to program into the flash. 
-    for (i = 0; i < WORDS_IN_FLASH_BUFFER; i++)
-    {
-        buffer[i] = 0x100 + i;
-    }
-
-    Flash_ptr = Sector[1].StartAddr;
-    Length = 0x400;
-    Status = Flash_Program(Flash_ptr, buffer, Length, &FlashStatus);
-    if (Status != STATUS_SUCCESS)
-    {
-        Example_Error(Status);
-    }
-
-    // Verify the values programmed.  The Program step itself does a verify
-    // as it goes.  This verify is a 2nd verification that can be done.      
-    Status = Flash_Verify(Flash_ptr, buffer, Length, &FlashStatus);
-    if (Status != STATUS_SUCCESS)
-    {
-        Example_Error(Status);
-    }
-
-// --------------
-
-    // Example: Program 0x199 values in Flash Sector B 
-
-    for (i = 0; i < WORDS_IN_FLASH_BUFFER; i++)
-    {
-        buffer[i] = 0x4500 + i;
-    }
-
-    Flash_ptr = (Uint16 *) Sector[1].StartAddr + 0x450;
-    Length = 0x199;
-    Status = Flash_Program(Flash_ptr, buffer, Length, &FlashStatus);
-    if (Status != STATUS_SUCCESS)
-    {
-        Example_Error(Status);
-    }
-
-    // Verify the values programmed.  The Program step itself does a verify
-    // as it goes.  This verify is a 2nd verification that can be done.      
-    Status = Flash_Verify(Flash_ptr, buffer, Length, &FlashStatus);
-    if (Status != STATUS_SUCCESS)
-    {
-        Example_Error(Status);
-    }
-
-// --------------
-// You can program a single bit in a memory location and then go back to 
-// program another bit in the same memory location. 
-
-    // Example: Program bit 0 in location in Flash Sector C.
-    // That is program the value 0xFFFE
-    Flash_ptr = Sector[2].StartAddr;
-    i = 0xFFFE;
-    Length = 1;
-    Status = Flash_Program(Flash_ptr, &i, Length, &FlashStatus);
-    if (Status != STATUS_SUCCESS)
-    {
-        Example_Error(Status);
-    }
-
-    // Example: Program bit 1 in the same location. Remember
-    // that bit 0 was already programmed so the value will be 0xFFFC
-    // (bit 0 and bit 1 will both be 0)
-
-    i = 0xFFFC;
-    Length = 1;
-    Status = Flash_Program(Flash_ptr, &i, Length, &FlashStatus);
-    if (Status != STATUS_SUCCESS)
-    {
-        Example_Error(Status);
-    }
-
-    // Verify the value.  This first verify should fail. 
-    i = 0xFFFE;
-    Status = Flash_Verify(Flash_ptr, &i, Length, &FlashStatus);
-    if (Status != STATUS_FAIL_VERIFY)
-    {
-        Example_Error(Status);
-    }
-
-    // This is the correct value and will pass.
-    i = 0xFFFC;
-    Status = Flash_Verify(Flash_ptr, &i, Length, &FlashStatus);
-    if (Status != STATUS_SUCCESS)
-    {
-        Example_Error(Status);
-    }
-
-// --------------
-// If a bit has already been programmed, it cannot be brought back to a 1 by
-// the program function.  The only way to bring a bit back to a 1 is by erasing
-// the entire sector that the bit belongs to.  This example shows the error
-// that program will return if a bit is specified as a 1 when it has already
-// been programmed to 0.
-
-    // Example: Program a single 16-bit value 0x0002, in Flash Sector C
-    Flash_ptr = Sector[2].StartAddr + 1;
-    i = 0x0002;
-    Length = 1;
-    Status = Flash_Program(Flash_ptr, &i, Length, &FlashStatus);
-    if (Status != STATUS_SUCCESS)
-    {
-        Example_Error(Status);
-    }
-
-    // Example: This will return an error!!  Can't program 0x0001
-    // because bit 0 in the the location was previously programmed
-    // to zero!
-
-    i = 0x0001;
-    Length = 1;
-    Status = Flash_Program(Flash_ptr, &i, Length, &FlashStatus);
-    // This should return a STATUS_FAIL_ZERO_BIT_ERROR
-    if (Status != STATUS_FAIL_ZERO_BIT_ERROR)
-    {
-        Example_Error(Status);
-    }
-
-// --------------   
-
-    // Example: This will return an error!!  The location specified
-    // is outside of the Flash and OTP!
-    Flash_ptr = (Uint16 *) 0x00340000;
-    i = 0x0001;
-    Length = 1;
-    Status = Flash_Program(Flash_ptr, &i, Length, &FlashStatus);
-    // This should return a STATUS_FAIL_ADDR_INVALID error
-    if (Status != STATUS_FAIL_ADDR_INVALID)
-    {
-        Example_Error(Status);
-    }
-
-// --------------   
-
-    // Example: This will return an error.  The end of the buffer falls 
-    // outside of the flash bank. No values will be programmed 
-    for (i = 0; i < WORDS_IN_FLASH_BUFFER; i++)
-    {
-        buffer[i] = 0xFFFF;
-    }
-
-    Flash_ptr = Sector[0].EndAddr;
-    Length = 13;
-    Status = Flash_Program(Flash_ptr, buffer, Length, &FlashStatus);
-    if (Status != STATUS_FAIL_ADDR_INVALID)
-    {
-        Example_Error(Status);
-    }
-
-    /*------------------------------------------------------------------
-     More Erase Sectors Examples - Clean up the sectors we wrote to:
-
-     ------------------------------------------------------------------*/
-
-    // Example: Erase Sector B
-    // SECTORB is defined in Flash2833x_API_Library.h
-    Status = Flash_Erase(SECTORB, &FlashStatus);
-    if (Status != STATUS_SUCCESS)
-    {
-        Example_Error(Status);
-    }
-
-    // Example: Erase Sector C
-    // SECTORC is defined in Flash2833x_API_Library.h
-    Status = Flash_Erase((SECTORC), &FlashStatus);
-    if (Status != STATUS_SUCCESS)
-    {
-        Example_Error(Status);
-    }
-
-    // Example: This will return an error. No valid sector is specified.
-    Status = Flash_Erase(0, &FlashStatus);
-    // Should return STATUS_FAIL_NO_SECTOR_SPECIFIED
-    if (Status != STATUS_FAIL_NO_SECTOR_SPECIFIED)
-    {
-        Example_Error(Status);
-    }
-
-    Example_Done();
 
 }
 

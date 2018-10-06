@@ -119,6 +119,19 @@ void DisableDog(void)
 }
 
 //---------------------------------------------------------------------------
+// Example: EnableDog:
+//---------------------------------------------------------------------------
+// This function enables the watchdog timer.
+
+void EnableDog(void)
+{
+    EALLOW;
+    SysCtrlRegs.WDCR= 0x0028;
+    SysCtrlRegs.SCSR = 0;
+    EDIS;
+}
+
+//---------------------------------------------------------------------------
 // Example: InitPll:
 //---------------------------------------------------------------------------
 // This function initializes the PLLCR register.

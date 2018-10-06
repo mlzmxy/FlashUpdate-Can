@@ -10,6 +10,6 @@
 #ifndef INCLUDE_CRC16_H_
 #define INCLUDE_CRC16_H_
 
-void CRC16(const unsigned char* pDataIn, int iLenIn, unsigned short* pCRCOut);
+void CRC16(unsigned int* pDataIn, int iLenIn, unsigned int* pCRCOut);
 
 #endif /* INCLUDE_CRC16_H_ */

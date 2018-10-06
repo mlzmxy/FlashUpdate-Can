@@ -47,7 +47,6 @@ void FlashUpdate();
 
 void Example_ToggleTest(Uint16 Pin);    // Run the ToggleTest
 Uint16 Example_CsmUnlock(void);         // Unlock the Code Security Module
-void Example_CallFlashAPI(void);        // Kernel function that interfaces to the API
 void Example_Error(Uint16 Status);      // If an error, stop here
 void Example_Done(void);                // If done, stop here
 void Example_MemCopy(Uint16 *SourceAddr, Uint16* SourceEndAddr, Uint16* DestAddr);
