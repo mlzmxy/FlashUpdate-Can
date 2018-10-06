@@ -24,7 +24,6 @@ void main(void)
 
     // Initialize GPIO
     InitECanGpio();
-//    ConfigGPIO();
 
     // Disable CPU interrupts
     DINT;

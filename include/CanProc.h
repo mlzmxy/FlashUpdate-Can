@@ -10,8 +10,37 @@
 
 
 // CAN ID
-#define SEND_CANID 0x00000001     //CAN发送消息ID
-#define RECEIVE_CANID 0x00000001  //CAN接收消息ID
+#define SEND_CANID 0x05A5A5A01        //发送ID
+#define RECEIVE_CANID 0x05A5A5A0      //接收ID
+
+/*
+#define UNLOCKCSM_CANID 0x05A5A111              //解锁CSM 发送ID
+#define RECEIVE_UNLOCKCSM_CANID 0x05A5A011      //解锁CSM 接收ID
+
+#define TOGGLE_CANID 0x05A5A112                 //toggle测试 发送ID
+#define RECEIVE_TOGGLE_CANID 0x05A5A012         //toggle测试 接收ID
+
+#define VERSION_CANID 0x05A5A113                //API版本 发送ID
+#define RECEIVE_VERSION_CANID 0x05A5A013        //API版本 接收ID
+
+#define ERASE_CANID 0x05A5A114                  //Flash擦除 发送ID
+#define RECEIVE_ERASE_CANID 0x05A5A014          //Flash擦除 接收ID
+
+#define DATABLOCKSIZE_CANID 0x05A5A115          //数据块大小 发送ID
+#define RECEIVE_DATABLOCKSIZE_CANID 0x05A5A015  //数据块大小 接收ID
+
+#define RECEICVEDATA_CANID 0x05A5A116           //接收数据 发送ID
+#define RECEIVE_RECEICVEDATA_CANID 0x05A5A016   //接收数据 接收ID
+
+#define CHECKSUM_CANID 0x05A5A117               //数据校验 发送ID
+#define RECEIVE_CHECKSUM_CANID 0x05A5A017       //数据校验 接收ID
+
+#define PROGRAM_CANID 0x05A5A118                //Flash Program 发送ID
+#define RECEIVE_PROGRAM_CANID 0x05A5A018        //Flash Program 接收ID
+
+#define VERIFY_CANID 0x05A5A119                 //Flash校验 发送ID
+#define RECEIVE_VERIFY_CANID 0x05A5A019         //Flash校验 接收ID
+*/
 
 #define EXTENDED_FRAME 0x80000000          // 扩展帧置位标志
 
@@ -75,12 +104,13 @@ typedef struct
 //---------------------------------------------------------------------------
 // Extern Varibales
 //
-
+extern can_msg receive_msg;
+extern Uint16 receive_flag;
 
 //---------------------------------------------------------------------------
 // Prototype for Functions
 //
-
+void Cana_send_data(can_msg_data* data);
 
 /* prototype for interrupt functions */
 interrupt void ecan0a_isr();
