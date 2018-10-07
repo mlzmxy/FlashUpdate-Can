@@ -1,2 +1,3 @@
-Debug
-targetConfigs
+Debug/
+.launches/
+targetConfigs/
