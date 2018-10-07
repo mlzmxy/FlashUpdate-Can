@@ -24,6 +24,7 @@
 #include "Example_Flash2833x_API.h"
 
 #include "CanProc.h"
+#include "CRC16.h"
 
 /*---- Standard headers -------------------------------------------------------*/
 #include <stdio.h>
@@ -255,7 +256,7 @@ void FlashUpdate()
                 }
                 break;
             case checkSum:
-                CRC16(buffer, length, &checkCode);
+                checkCode = Crc16(buffer, length);
                 if(checkCode == (data.byte.b2 + (data.byte.b3 << 8)))
                 {
                     data.byte.b1 = 0x55;
