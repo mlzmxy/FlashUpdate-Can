@@ -64,16 +64,16 @@ void Cana_send_data(can_msg_data* data)
     EALLOW;
     ECanaRegs.CANME.all = 0;  //DISABLE MAILBOX
 
-    ECanaMboxes.MBOX1.MSGID.all = SEND_CANID | EXTENDED_FRAME;
-    ECanaMboxes.MBOX1.MSGCTRL.bit.DLC = 8;
-    ECanaMboxes.MBOX1.MDL.byte.BYTE0 = data->byte.b0;
-    ECanaMboxes.MBOX1.MDL.byte.BYTE1 = data->byte.b1;
-    ECanaMboxes.MBOX1.MDL.byte.BYTE2 = data->byte.b2;
-    ECanaMboxes.MBOX1.MDL.byte.BYTE3 = data->byte.b3;
-    ECanaMboxes.MBOX1.MDH.byte.BYTE4 = data->byte.b4;
-    ECanaMboxes.MBOX1.MDH.byte.BYTE5 = data->byte.b5;
-    ECanaMboxes.MBOX1.MDH.byte.BYTE6 = data->byte.b6;
-    ECanaMboxes.MBOX1.MDH.byte.BYTE7 = data->byte.b7;
+    ECanaMboxes.MBOX0.MSGID.all = SEND_CANID | EXTENDED_FRAME;
+    ECanaMboxes.MBOX0.MSGCTRL.bit.DLC = 8;
+    ECanaMboxes.MBOX0.MDL.byte.BYTE0 = data->byte.b0;
+    ECanaMboxes.MBOX0.MDL.byte.BYTE1 = data->byte.b1;
+    ECanaMboxes.MBOX0.MDL.byte.BYTE2 = data->byte.b2;
+    ECanaMboxes.MBOX0.MDL.byte.BYTE3 = data->byte.b3;
+    ECanaMboxes.MBOX0.MDH.byte.BYTE4 = data->byte.b4;
+    ECanaMboxes.MBOX0.MDH.byte.BYTE5 = data->byte.b5;
+    ECanaMboxes.MBOX0.MDH.byte.BYTE6 = data->byte.b6;
+    ECanaMboxes.MBOX0.MDH.byte.BYTE7 = data->byte.b7;
 
     ECanaRegs.CANME.all = 0x80000001;
     ECanaRegs.CANTRS.bit.TRS0 = 0x01;   //写1发送，当发送成功或终止时，被复位
@@ -128,16 +128,16 @@ void Canb_send_data(can_msg_data* data)
     EALLOW;
     ECanbRegs.CANME.all = 0;  //DISABLE MAILBOX
 
-    ECanbMboxes.MBOX1.MSGID.all = SEND_CANID | EXTENDED_FRAME;
-    ECanbMboxes.MBOX1.MSGCTRL.bit.DLC = 8;
-    ECanbMboxes.MBOX1.MDL.byte.BYTE0 = data->byte.b0;
-    ECanbMboxes.MBOX1.MDL.byte.BYTE1 = data->byte.b1;
-    ECanbMboxes.MBOX1.MDL.byte.BYTE2 = data->byte.b2;
-    ECanbMboxes.MBOX1.MDL.byte.BYTE3 = data->byte.b3;
-    ECanbMboxes.MBOX1.MDH.byte.BYTE4 = data->byte.b4;
-    ECanbMboxes.MBOX1.MDH.byte.BYTE5 = data->byte.b5;
-    ECanbMboxes.MBOX1.MDH.byte.BYTE6 = data->byte.b6;
-    ECanbMboxes.MBOX1.MDH.byte.BYTE7 = data->byte.b7;
+    ECanbMboxes.MBOX0.MSGID.all = SEND_CANID | EXTENDED_FRAME;
+    ECanbMboxes.MBOX0.MSGCTRL.bit.DLC = 8;
+    ECanbMboxes.MBOX0.MDL.byte.BYTE0 = data->byte.b0;
+    ECanbMboxes.MBOX0.MDL.byte.BYTE1 = data->byte.b1;
+    ECanbMboxes.MBOX0.MDL.byte.BYTE2 = data->byte.b2;
+    ECanbMboxes.MBOX0.MDL.byte.BYTE3 = data->byte.b3;
+    ECanbMboxes.MBOX0.MDH.byte.BYTE4 = data->byte.b4;
+    ECanbMboxes.MBOX0.MDH.byte.BYTE5 = data->byte.b5;
+    ECanbMboxes.MBOX0.MDH.byte.BYTE6 = data->byte.b6;
+    ECanbMboxes.MBOX0.MDH.byte.BYTE7 = data->byte.b7;
 
     ECanbRegs.CANME.all = 0x80000001;
     ECanbRegs.CANTRS.bit.TRS0 = 0x01;   //写1发送，当发送成功或终止时，被复位

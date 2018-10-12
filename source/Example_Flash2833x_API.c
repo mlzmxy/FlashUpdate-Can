@@ -209,19 +209,8 @@ void FlashUpdate()
             case version:
                 //versionHex = Flash_APIVersionHex();
                 versionHex = 0x0210;
-                data.byte.b2 = versionHex & 0xFF;
-                data.byte.b1 = versionHex >> 8;
-                if (versionHex == 0x0210)
-                {
-                    data.byte.b1 = 0x55;
-                }
-                else
-                {
-                    data.byte.b1 = 0x0;
-                    // Unexpected API version
-                    // Make a decision based on this info.
-                    //asm("    ESTOP0");
-                }
+                data.byte.b1 = versionHex & 0x00FF;
+                data.byte.b2 = versionHex >> 8;
                 break;
             case erase:
                 //status = Flash_Erase((SECTORC|SECTORD|SECTORE), &FlashStatus);
@@ -240,8 +229,9 @@ void FlashUpdate()
             case dataBlockInfo:
                 length = data.byte.b6 + (data.byte.b7 << 8);
                 i = 0;
-                addr_32 = data.byte.b4 + (data.byte.b5 << 8);
-                addr_32 = (addr_32 << 16) + (data.byte.b3 << 8) + data.byte.b2;
+                //addr_32 = ((data.byte.b5 << 24) & 0xFF000000) | ((data.byte.b4 << 16) & 0x00FF0000) | ((data.byte.b3 << 8) & 0x0000FF00) | (data.byte.b2 & 0x000000FF);
+                addr_32 = (data.byte.b5 << 8) | (data.byte.b4 & 0x00FF);
+                addr_32 = (addr_32 << 16) | (((data.byte.b3 << 8) | (data.byte.b2 & 0x00FF)) & 0x0000FFFF);
                 addr = (Uint16*) addr_32;
                 if (addr == flash_ptr)
                 {
@@ -289,7 +279,7 @@ void FlashUpdate()
                 }
                 break;
             case program:
-                if ((flash_ptr + length) <= Sector[4].EndAddr)
+                if ((flash_ptr + length) >= Sector[4].EndAddr)
                 {
                     //status = Flash_Program(flash_ptr, buffer, length, &FlashStatus);
                     status = 0;
@@ -330,7 +320,7 @@ void FlashUpdate()
                 //EnableDog();  //使能看门狗
                 break;
             }
-            Cana_send_data(&data);
+            Canb_send_data(&data);
             EINT;
             //开全局中断
         }
