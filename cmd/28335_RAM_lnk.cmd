@@ -121,14 +121,7 @@ SECTIONS
       The codestart section (found in DSP28_CodeStartBranch.asm)
       re-directs execution to the start of user code.  */
    codestart        : > BEGIN,     PAGE = 0
-   
-#ifdef __TI_COMPILER_VERSION__
-   #if __TI_COMPILER_VERSION__ >= 15009000
-    .TI.ramfunc : {} > RAML0,      PAGE = 0
-   #else
    ramfuncs         : > RAML0,     PAGE = 0   
-   #endif
-#endif    
    
    .text            : > RAML1,     PAGE = 0
    .cinit           : > RAML0,     PAGE = 0

@@ -23,7 +23,7 @@
 // a different section.  This section will then be mapped to a load and
 // run address using the linker cmd file.
 
-//#pragma CODE_SECTION(InitFlash, "ramfuncs");
+#pragma CODE_SECTION(InitFlash, "ramfuncs");
 
 //---------------------------------------------------------------------------
 // InitSysCtrl:
@@ -312,53 +312,6 @@ void InitPeripheralClocks(void)
 
    EDIS;
 }
-
-//---------------------------------------------------------------------------
-// Example: CsmUnlock:
-//---------------------------------------------------------------------------
-// This function unlocks the CSM. User must replace 0xFFFF's with current
-// password for the DSP. Returns 1 if unlock is successful.
-
-#define STATUS_FAIL          0
-#define STATUS_SUCCESS       1
-
-Uint16 CsmUnlock()
-{
-    volatile Uint16 temp;
-
-    // Load the key registers with the current password. The 0xFFFF's are dummy
-	// passwords.  User should replace them with the correct password for the DSP.
-
-    EALLOW;
-    CsmRegs.KEY0 = 0xFFFF;
-    CsmRegs.KEY1 = 0xFFFF;
-    CsmRegs.KEY2 = 0xFFFF;
-    CsmRegs.KEY3 = 0xFFFF;
-    CsmRegs.KEY4 = 0xFFFF;
-    CsmRegs.KEY5 = 0xFFFF;
-    CsmRegs.KEY6 = 0xFFFF;
-    CsmRegs.KEY7 = 0xFFFF;
-    EDIS;
-
-    // Perform a dummy read of the password locations
-    // if they match the key values, the CSM will unlock
-
-    temp = CsmPwl.PSWD0;
-    temp = CsmPwl.PSWD1;
-    temp = CsmPwl.PSWD2;
-    temp = CsmPwl.PSWD3;
-    temp = CsmPwl.PSWD4;
-    temp = CsmPwl.PSWD5;
-    temp = CsmPwl.PSWD6;
-    temp = CsmPwl.PSWD7;
-
-    // If the CSM unlocked, return succes, otherwise return
-    // failure.
-    if (CsmRegs.CSMSCR.bit.SECURE == 0) return STATUS_SUCCESS;
-    else return STATUS_FAIL;
-
-}
-
 
 //===========================================================================
 // End of file.

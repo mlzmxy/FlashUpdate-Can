@@ -75,12 +75,13 @@ enum FLOW
     toggle = 0x12,
     version = 0x13,
     erase = 0x14,
-    dataBlockSize = 0x15,
-    receiveData = 0x16,
+    dataBlockInfo = 0x15,
+    flashData = 0x16,
     checkSum = 0x17,
     program = 0x18,
     verify = 0x19,
-    updateDone = 0x20
+    changeUpdateFlag = 0x1A,
+    resetDSP = 0x1B
 };
 enum FLOW update_flow = handshake;
 
@@ -92,6 +93,10 @@ void FlashUpdate()
     Uint16 length;         // Number of 16-bit values to be programmed
     Uint16 versionHex;     // Version of the API in decimal encoded hex
     Uint16 checkCode;      // CRC16 check code
+
+    //temp variables
+    Uint16 *addr;
+    Uint32 addr_32;
     Uint16 i;
 
     can_msg_data data;
@@ -109,8 +114,8 @@ void FlashUpdate()
      ------------------------------------------------------------------*/
 
     //Copy the Flash API functions to SARAM
-    MemCopy(&Flash28_API_LoadStart, &Flash28_API_LoadEnd,
-            &Flash28_API_RunStart);
+//    MemCopy(&Flash28_API_LoadStart, &Flash28_API_LoadEnd,
+//            &Flash28_API_RunStart);
 
     /*------------------------------------------------------------------
      Initalize Flash_CPUScaleFactor.
@@ -150,7 +155,8 @@ void FlashUpdate()
     {
         if (receive_flag)
         {
-            DINT; //关闭全局中断
+            DINT;
+            //关闭全局中断
 
             receive_flag = 0;
             data.byte.b0 = receive_msg.data.byte.b0;
@@ -178,7 +184,8 @@ void FlashUpdate()
                  (L0-L3) then this step is not required.
                  ------------------------------------------------------------------*/
 
-                status = Example_CsmUnlock();
+                //status = Example_CsmUnlock();
+                status = 0;  //测试
                 if (status == STATUS_SUCCESS)
                 {
                     data.byte.b1 = 0x55;
@@ -195,12 +202,13 @@ void FlashUpdate()
                 GpioCtrlRegs.GPADIR.bit.GPIO0 = 1;
 
                 // Example: Toggle GPIO0
-                Example_ToggleTest(0);
+                //Example_ToggleTest(0);
 
                 data.byte.b1 = 0x55;
                 break;
             case version:
-                versionHex = Flash_APIVersionHex();
+                //versionHex = Flash_APIVersionHex();
+                versionHex = 0x0210;
                 data.byte.b2 = versionHex & 0xFF;
                 data.byte.b1 = versionHex >> 8;
                 if (versionHex == 0x0210)
@@ -216,7 +224,8 @@ void FlashUpdate()
                 }
                 break;
             case erase:
-                status = Flash_Erase((SECTORC|SECTORD|SECTORE), &FlashStatus);
+                //status = Flash_Erase((SECTORC|SECTORD|SECTORE), &FlashStatus);
+                status = 0;
                 flash_ptr = Sector[2].StartAddr;
                 if (status == STATUS_SUCCESS)
                 {
@@ -228,36 +237,49 @@ void FlashUpdate()
                     //Example_Error(status);
                 }
                 break;
-            case dataBlockSize:
-                data.byte.b1 = 0x55;
-                length = data.byte.b2 + (data.byte.b3 << 8);
+            case dataBlockInfo:
+                length = data.byte.b6 + (data.byte.b7 << 8);
                 i = 0;
-                break;
-            case receiveData:
-                if((data.byte.b2 + (data.byte.b3 << 8)) == i)
+                addr_32 = data.byte.b4 + (data.byte.b5 << 8);
+                addr_32 = (addr_32 << 16) + (data.byte.b3 << 8) + data.byte.b2;
+                addr = (Uint16*) addr_32;
+                if (addr == flash_ptr)
                 {
-                    if(i != length)
+                    data.byte.b1 = 0x55;
+                }
+                else
+                {
+                    data.byte.b1 = 0x0;
+                }
+                break;
+            case flashData:
+                if (i < WORDS_IN_FLASH_BUFFER)
+                {
+                    buffer[i] = data.byte.b2 + (data.byte.b3 << 8);
+                    buffer[i + 1] = data.byte.b4 + (data.byte.b5 << 8);
+
+                    checkCode = Crc16(&buffer[i], 2);
+                    if (checkCode == (data.byte.b6 + (data.byte.b7 << 8)))
                     {
                         data.byte.b1 = 0x55;
-                        buffer[i] = data.byte.b4 + (data.byte.b5 << 8);
-                        buffer[i + 1] = data.byte.b6 + (data.byte.b7 << 8);
                         i += 2;
                     }
                     else
                     {
                         data.byte.b1 = 0x0;
                     }
+
                 }
                 else
                 {
                     data.byte.b1 = 0x0;
-                    data.byte.b2 = i & 0xFF;
-                    data.byte.b3 = i >> 8;
                 }
+                data.byte.b2 = i & 0xFF;
+                data.byte.b3 = (i >> 8) & 0x00FF;
                 break;
             case checkSum:
                 checkCode = Crc16(buffer, length);
-                if(checkCode == (data.byte.b2 + (data.byte.b3 << 8)))
+                if (checkCode == (data.byte.b2 + (data.byte.b3 << 8)))
                 {
                     data.byte.b1 = 0x55;
                 }
@@ -269,8 +291,8 @@ void FlashUpdate()
             case program:
                 if ((flash_ptr + length) <= Sector[4].EndAddr)
                 {
-                    status = Flash_Program(flash_ptr, buffer, length,
-                                           &FlashStatus);
+                    //status = Flash_Program(flash_ptr, buffer, length, &FlashStatus);
+                    status = 0;
                     flash_ptr += length;
                     if (status == STATUS_SUCCESS)
                     {
@@ -288,7 +310,8 @@ void FlashUpdate()
                 }
                 break;
             case verify:
-                status = Flash_Verify(flash_ptr, buffer, length, &FlashStatus);
+                //status = Flash_Verify(flash_ptr, buffer, length, &FlashStatus);
+                status = 0;
                 if (status == STATUS_SUCCESS)
                 {
                     data.byte.b1 = 0x55;
@@ -299,15 +322,17 @@ void FlashUpdate()
                     //Example_Error(Status);
                 }
                 break;
-            case updateDone:
+            case changeUpdateFlag:  //不是必须？
                 data.byte.b1 = 0x55;
-                EnableDog();  //使能看门狗
                 break;
-            default:
-                data.byte.b1 = 0x0;
+            case resetDSP:
+                data.byte.b1 = 0x55;
+                //EnableDog();  //使能看门狗
+                break;
             }
             Cana_send_data(&data);
-            EINT;  //开全局中断
+            EINT;
+            //开全局中断
         }
     }
 
@@ -332,8 +357,8 @@ Uint16 Example_CsmUnlock()
 {
     volatile Uint16 temp;
 
-    // Load the key registers with the current password
-    // These are defined in Example_Flash2833x_CsmKeys.asm
+// Load the key registers with the current password
+// These are defined in Example_Flash2833x_CsmKeys.asm
 
     EALLOW;
     CsmRegs.KEY0 = PRG_key0;
@@ -346,8 +371,8 @@ Uint16 Example_CsmUnlock()
     CsmRegs.KEY7 = PRG_key7;
     EDIS;
 
-    // Perform a dummy read of the password locations
-    // if they match the key values, the CSM will unlock 
+// Perform a dummy read of the password locations
+// if they match the key values, the CSM will unlock
 
     temp = CsmPwl.PSWD0;
     temp = CsmPwl.PSWD1;
@@ -358,8 +383,8 @@ Uint16 Example_CsmUnlock()
     temp = CsmPwl.PSWD6;
     temp = CsmPwl.PSWD7;
 
-    // If the CSM unlocked, return succes, otherwise return
-    // failure.
+// If the CSM unlocked, return succes, otherwise return
+// failure.
     if ((CsmRegs.CSMSCR.all & 0x0001) == 0)
         return STATUS_SUCCESS;
     else
@@ -386,8 +411,8 @@ void Example_ToggleTest(Uint16 PinNumber)
 {
     Uint32 mask;
 
-    // Before calling the Toggle Test, we must setup
-    // the MUX and DIR registers.
+// Before calling the Toggle Test, we must setup
+// the MUX and DIR registers.
 
     if (PinNumber > (Uint16) 34)
     {
@@ -397,7 +422,7 @@ void Example_ToggleTest(Uint16 PinNumber)
             ;
     }
 
-    // Pins GPIO16-GPIO31
+// Pins GPIO16-GPIO31
     else if (PinNumber >= 32)
     {
         EALLOW;
@@ -411,7 +436,7 @@ void Example_ToggleTest(Uint16 PinNumber)
         EDIS;
     }
 
-    // Pins GPIO16-GPIO31
+// Pins GPIO16-GPIO31
     else if (PinNumber >= 16)
     {
         EALLOW;
@@ -425,7 +450,7 @@ void Example_ToggleTest(Uint16 PinNumber)
         EDIS;
     }
 
-    // Pins GPIO0-GPIO15
+// Pins GPIO0-GPIO15
     else
     {
         EALLOW;
@@ -484,7 +509,7 @@ void Example_Done(void)
 #pragma CODE_SECTION(MyCallbackFunction,"ramfuncs");
 void MyCallbackFunction(void)
 {
-    // Toggle pin, service external watchdog etc
+// Toggle pin, service external watchdog etc
     MyCallbackCounter++;
     asm("    NOP");
 

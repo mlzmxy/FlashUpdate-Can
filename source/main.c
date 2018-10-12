@@ -39,11 +39,12 @@ void main(void)
     // Service Routines (ISR).
     InitPieVectTable();
 
-    MemCopy(&RamfuncsLoadStart, &RamfuncsLoadEnd, &RamfuncsRunStart);
-    InitFlash();
+//    MemCopy(&RamfuncsLoadStart, &RamfuncsLoadEnd, &RamfuncsRunStart);
+//    InitFlash();
 
     EALLOW;
     PieVectTable.ECAN0INTA = &ecan0a_isr;
+    PieVectTable.ECAN0INTB = &ecan0b_isr;
     EDIS;
 
     // Initialize all the Device Peripherals
@@ -52,6 +53,7 @@ void main(void)
     // Enable INT in PIE
     PieCtrlRegs.PIECTRL.bit.ENPIE = 1;  //enable PIE
     PieCtrlRegs.PIEIER9.bit.INTx5 = 1;  //ECAN0INTA  eCANA
+    PieCtrlRegs.PIEIER9.bit.INTx7 = 1;  //ECAN0INTB  eCANB
 
     IER |= M_INT9;  // Enable CPU Interrupt 9 - CAN
 
@@ -60,14 +62,14 @@ void main(void)
 
     while (1)
     {
-        if(0x5A5A == (*(volatile Uint16*)(0x33FF7F)))
-        {
+//        if(0x5A5A == (*(volatile Uint16*)(0x33FF7F)))
+//        {
             FlashUpdate();
-        }
-        else
-        {
-            asm(" LB 0x328000");
-        }
+//        }
+//        else
+//        {
+//            asm(" LB 0x328000");
+//        }
     }
 }
 

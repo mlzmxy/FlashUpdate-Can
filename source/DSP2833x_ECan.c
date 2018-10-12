@@ -25,6 +25,7 @@
 void InitECan(void)
 {
    InitECana();
+   InitECanb();
 }
 
 void InitECana(void)		// Initialize eCAN-A module
@@ -152,6 +153,134 @@ void InitECana(void)		// Initialize eCAN-A module
     EDIS;
 }
 
+void InitECanb(void)        // Initialize eCAN-B module
+{
+/* Create a shadow register structure for the CAN control registers. This is
+ needed, since only 32-bit access is allowed to these registers. 16-bit access
+ to these registers could potentially corrupt the register contents or return
+ false data. This is especially true while writing to/reading from a bit
+ (or group of bits) among bits 16 - 31 */
+
+struct ECAN_REGS ECanbShadow;
+
+   EALLOW;      // EALLOW enables access to protected bits
+
+/* Configure eCAN RX and TX pins for CAN operation using eCAN regs*/
+
+    ECanbShadow.CANTIOC.all = ECanbRegs.CANTIOC.all;
+    ECanbShadow.CANTIOC.bit.TXFUNC = 1;
+    ECanbRegs.CANTIOC.all = ECanbShadow.CANTIOC.all;
+
+    ECanbShadow.CANRIOC.all = ECanbRegs.CANRIOC.all;
+    ECanbShadow.CANRIOC.bit.RXFUNC = 1;
+    ECanbRegs.CANRIOC.all = ECanbShadow.CANRIOC.all;
+
+/* Configure eCAN for HECC mode - (reqd to access mailboxes 16 thru 31) */
+
+    ECanbShadow.CANMC.all = ECanbRegs.CANMC.all;
+    ECanbShadow.CANMC.bit.SCB = 1;  // eCAN mode
+    ECanbShadow.CANMC.bit.STM = 0;  // no self-test
+    ECanbShadow.CANMC.bit.ABO = 1;  // auto bus connection
+    ECanbShadow.CANMC.bit.SUSP = 1; // free mode
+    ECanbRegs.CANMC.all = ECanbShadow.CANMC.all;
+
+/* Initialize all bits of 'Master Control Field' to zero */
+// Some bits of MSGCTRL register come up in an unknown state. For proper operation,
+// all bits (including reserved bits) of MSGCTRL must be initialized to zero
+
+    ECanbMboxes.MBOX0.MSGCTRL.all = 0x00000000;
+    ECanbMboxes.MBOX31.MSGCTRL.all = 0x00000000;
+
+
+// TAn, RMPn, GIFn bits are all zero upon reset and are cleared again
+//  as a matter of precaution.
+
+    ECanbRegs.CANTA.all = 0xFFFFFFFF;   /* Clear all TAn bits */
+    ECanbRegs.CANRMP.all = 0xFFFFFFFF;  /* Clear all RMPn bits */
+
+    /* Configure bit timing parameters for eCANB*/
+
+    ECanbShadow.CANMC.all = ECanbRegs.CANMC.all;
+    ECanbShadow.CANMC.bit.CCR = 1 ;            // Set CCR = 1
+    ECanbRegs.CANMC.all = ECanbShadow.CANMC.all;
+
+    ECanbShadow.CANES.all = ECanbRegs.CANES.all;
+
+    do
+    {
+        ECanbShadow.CANES.all = ECanbRegs.CANES.all;
+    } while(ECanbShadow.CANES.bit.CCE != 1 );       // Wait for CCE bit to be  cleared..
+
+
+    ECanbShadow.CANBTC.all = 0;
+
+    /* The following block for all 150 MHz SYSCLKOUT - default. Bit rate = 250 kbps */
+    ECanbShadow.CANBTC.bit.BRPREG = 19;
+    ECanbShadow.CANBTC.bit.TSEG2REG = 2;
+    ECanbShadow.CANBTC.bit.TSEG1REG = 10;
+
+    // three sampling
+    ECanbShadow.CANBTC.bit.SAM = 1;
+    ECanbRegs.CANBTC.all = ECanbShadow.CANBTC.all;
+
+    ECanbShadow.CANMC.all = ECanbRegs.CANMC.all;
+    ECanbShadow.CANMC.bit.CCR = 0 ;            // Set CCR = 0
+    ECanbRegs.CANMC.all = ECanbShadow.CANMC.all;
+
+    ECanbShadow.CANES.all = ECanbRegs.CANES.all;
+
+    do
+    {
+        ECanbShadow.CANES.all = ECanbRegs.CANES.all;
+    } while(ECanbShadow.CANES.bit.CCE != 0 );       // Wait for CCE bit to be  cleared..
+
+    EDIS;
+
+    EALLOW;
+    /* Configure Mailboxes */
+    // Disable all Mailboxes
+    ECanbRegs.CANME.all = 0;        // Required before writing the MSGIDs
+    // send mailboxes
+    ECanbMboxes.MBOX0.MSGID.all = SEND_CANID | EXTENDED_FRAME;
+    // receive mailbox
+    ECanbMboxes.MBOX31.MSGID.all = RECEIVE_CANID | EXTENDED_FRAME;
+
+    // Configure Mailboxes 0-15 as Tx, 16-31 as Rx
+    ECanbRegs.CANMD.all = 0xFFFF0000;
+    // Enable all Mailboxes
+    ECanbRegs.CANME.all = 0x80000001;
+
+    // 邮箱数据长度
+    ECanbMboxes.MBOX0.MSGCTRL.bit.DLC = 8;
+    ECanbMboxes.MBOX31.MSGCTRL.bit.DLC = 8;
+
+    // 设置优先级
+    ECanbMboxes.MBOX0.MSGCTRL.bit.TPL = 0;
+
+    // 没有远程帧请求
+    ECanbMboxes.MBOX0.MSGCTRL.bit.RTR = 0;
+    ECanbMboxes.MBOX31.MSGCTRL.bit.RTR = 0;
+
+    // 初始化邮箱数据
+    ECanbMboxes.MBOX0.MDL.all = 0;
+    ECanbMboxes.MBOX0.MDH.all = 0;
+    ECanbMboxes.MBOX31.MDL.all = 0;
+    ECanbMboxes.MBOX31.MDH.all = 0;
+    EDIS;
+
+    EALLOW;
+    // Enable send mailboxes interrupt
+    ECanbRegs.CANMIM.all = 0xFFFF0000;
+    // Mailbox interrupt is generated on ECAN0INT
+    ECanbRegs.CANMIL.all = 0x00000000;
+    // Enable global interrupt
+    ECanbRegs.CANGIF0.all  = 0xFFFFFFFF;
+    ECanbRegs.CANGIF1.all  = 0xFFFFFFFF;
+    // Global interrupt is generated on ECAN1INT and ECAN0INT
+    ECanbRegs.CANGIM.all = 0x3FF07;
+    EDIS;
+}
+
 
 //---------------------------------------------------------------------------
 // Example: InitECanGpio:
@@ -170,7 +299,8 @@ void InitECana(void)		// Initialize eCAN-A module
 
 void InitECanGpio(void)
 {
-   InitECanbGpio();
+    InitECanaGpio();
+    InitECanbGpio();
 }
 
 void InitECanaGpio(void)

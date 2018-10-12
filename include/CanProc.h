@@ -10,8 +10,8 @@
 
 
 // CAN ID
-#define SEND_CANID 0x05A5A5A01        //发送ID
-#define RECEIVE_CANID 0x05A5A5A0      //接收ID
+#define SEND_CANID    0x01A2A3A1        //发送ID
+#define RECEIVE_CANID 0x01A2A3A0      //接收ID
 
 /*
 #define UNLOCKCSM_CANID 0x05A5A111              //解锁CSM 发送ID
@@ -111,9 +111,11 @@ extern Uint16 receive_flag;
 // Prototype for Functions
 //
 void Cana_send_data(can_msg_data* data);
+void Canb_send_data(can_msg_data* data);
 
 /* prototype for interrupt functions */
 interrupt void ecan0a_isr();
+interrupt void ecan0b_isr();
 
 
 #endif /* CANPROC_H */
