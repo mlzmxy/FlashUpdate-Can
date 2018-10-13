@@ -9,6 +9,7 @@
 #include "DSP2833x_Examples.h"   // DSP28 Examples Include File
 
 #include "CanProc.h"
+#include "project.h"
 
 //---------------------------------------------------------------------------
 // Const Variables
@@ -19,11 +20,6 @@ const can_msg can_msg_0 = {{0}, 0, {0, 0}};  //can消息初始值
 // Variables
 //
 can_msg receive_msg = {{0}, 0, {0, 0}};  //接收的CAN消息
-Uint16 receive_flag = 0;  //接收消息标志
-
-//---------------------------------------------------------------------------
-// prototype for functions
-//
 
 
 /* CAN Interrupt Function */
@@ -45,10 +41,35 @@ interrupt void ecan0a_isr()
 	    receive_msg.data.byte.b6 = ECanaMboxes.MBOX31.MDH.byte.BYTE6;
 	    receive_msg.data.byte.b7 = ECanaMboxes.MBOX31.MDH.byte.BYTE7;
 
-        receive_flag = 1;
+	    receive_cmd_flag = 1;
 
 		ECanaRegs.CANRMP.bit.RMP31 = 1;  //写1清除
 	}
+
+    if(0x01 == ECanaRegs.CANRMP.bit.RMP30)
+    {
+        if (start_data_flag)
+        {
+            if (RECEIVE_DATA_CANID
+                    == (ECanaMboxes.MBOX30.MSGID.all & 0x1fffffff))
+            {
+                buffer[data_num++ % WORDS_IN_FLASH_BUFFER] =
+                        (ECanaMboxes.MBOX30.MDL.byte.BYTE0 & 0x00FF)
+                                | (ECanaMboxes.MBOX30.MDL.byte.BYTE1 << 8);
+                buffer[data_num++ % WORDS_IN_FLASH_BUFFER] =
+                        (ECanaMboxes.MBOX30.MDL.byte.BYTE2 & 0x00FF)
+                                | (ECanbMboxes.MBOX30.MDL.byte.BYTE3 << 8);
+                buffer[data_num++ % WORDS_IN_FLASH_BUFFER] =
+                        (ECanaMboxes.MBOX30.MDH.byte.BYTE4 & 0x00FF)
+                                | (ECanaMboxes.MBOX30.MDH.byte.BYTE5 << 8);
+                buffer[data_num++ % WORDS_IN_FLASH_BUFFER] =
+                        (ECanaMboxes.MBOX30.MDH.byte.BYTE6 & 0x00FF)
+                                | (ECanaMboxes.MBOX30.MDH.byte.BYTE7 << 8);
+            }
+        }
+
+        ECanaRegs.CANRMP.bit.RMP30 = 1;  //写1清除
+    }
 
 	PieCtrlRegs.PIEACK.bit.ACK9 = 1;
 
@@ -75,7 +96,7 @@ void Cana_send_data(can_msg_data* data)
     ECanaMboxes.MBOX0.MDH.byte.BYTE6 = data->byte.b6;
     ECanaMboxes.MBOX0.MDH.byte.BYTE7 = data->byte.b7;
 
-    ECanaRegs.CANME.all = 0x80000001;
+    ECanaRegs.CANME.all = 0xC0000001;
     ECanaRegs.CANTRS.bit.TRS0 = 0x01;   //写1发送，当发送成功或终止时，被复位
 
     while(ECanaRegs.CANTA.bit.TA0 == 0)
@@ -109,9 +130,34 @@ interrupt void ecan0b_isr()
         receive_msg.data.byte.b6 = ECanbMboxes.MBOX31.MDH.byte.BYTE6;
         receive_msg.data.byte.b7 = ECanbMboxes.MBOX31.MDH.byte.BYTE7;
 
-        receive_flag = 1;
+        receive_cmd_flag = 1;
 
         ECanbRegs.CANRMP.bit.RMP31 = 1;  //写1清除
+    }
+
+    if(0x01 == ECanbRegs.CANRMP.bit.RMP30)
+    {
+        if (start_data_flag)
+        {
+            if (RECEIVE_DATA_CANID
+                    == (ECanbMboxes.MBOX30.MSGID.all & 0x1fffffff))
+            {
+                buffer[data_num++ % WORDS_IN_FLASH_BUFFER] =
+                        (ECanbMboxes.MBOX30.MDL.byte.BYTE0 & 0x00FF)
+                                | (ECanbMboxes.MBOX30.MDL.byte.BYTE1 << 8);
+                buffer[data_num++ % WORDS_IN_FLASH_BUFFER] =
+                        (ECanbMboxes.MBOX30.MDL.byte.BYTE2 & 0x00FF)
+                                | (ECanbMboxes.MBOX30.MDL.byte.BYTE3 << 8);
+                buffer[data_num++ % WORDS_IN_FLASH_BUFFER] =
+                        (ECanbMboxes.MBOX30.MDH.byte.BYTE4 & 0x00FF)
+                                | (ECanbMboxes.MBOX30.MDH.byte.BYTE5 << 8);
+                buffer[data_num++ % WORDS_IN_FLASH_BUFFER] =
+                        (ECanbMboxes.MBOX30.MDH.byte.BYTE6 & 0x00FF)
+                                | (ECanbMboxes.MBOX30.MDH.byte.BYTE7 << 8);
+            }
+        }
+
+        ECanbRegs.CANRMP.bit.RMP30 = 1;  //写1清除
     }
 
     PieCtrlRegs.PIEACK.bit.ACK9 = 1;
@@ -139,7 +185,7 @@ void Canb_send_data(can_msg_data* data)
     ECanbMboxes.MBOX0.MDH.byte.BYTE6 = data->byte.b6;
     ECanbMboxes.MBOX0.MDH.byte.BYTE7 = data->byte.b7;
 
-    ECanbRegs.CANME.all = 0x80000001;
+    ECanbRegs.CANME.all = 0xC0000001;
     ECanbRegs.CANTRS.bit.TRS0 = 0x01;   //写1发送，当发送成功或终止时，被复位
 
     while(ECanbRegs.CANTA.bit.TA0 == 0)

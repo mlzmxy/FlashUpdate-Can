@@ -10,8 +10,9 @@
 
 
 // CAN ID
-#define SEND_CANID    0x01A2A3A1        //发送ID
-#define RECEIVE_CANID 0x01A2A3A0      //接收ID
+#define SEND_CANID    0x01A2A3A1       //发送ID
+#define RECEIVE_CANID 0x01A2A3A0       //接收ID
+#define RECEIVE_DATA_CANID 0x01A2A3A4  //接收flash数据ID
 
 /*
 #define UNLOCKCSM_CANID 0x05A5A111              //解锁CSM 发送ID
@@ -105,7 +106,6 @@ typedef struct
 // Extern Varibales
 //
 extern can_msg receive_msg;
-extern Uint16 receive_flag;
 
 //---------------------------------------------------------------------------
 // Prototype for Functions

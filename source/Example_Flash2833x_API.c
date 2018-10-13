@@ -25,6 +25,7 @@
 
 #include "CanProc.h"
 #include "CRC16.h"
+#include "project.h"
 
 /*---- Standard headers -------------------------------------------------------*/
 #include <stdio.h>
@@ -37,9 +38,8 @@ Uint32 MyCallbackCounter; // Just increment a counter in the callback function
 FLASH_ST FlashStatus;
 
 /*---------------------------------------------------------------------------
- Data/Program Buffer used for testing the flash API functions
+ Data/Program Buffer used for flash data
  ---------------------------------------------------------------------------*/
-#define  WORDS_IN_FLASH_BUFFER 0x200      // Programming data buffer, Words
 Uint16 buffer[WORDS_IN_FLASH_BUFFER];
 
 /*---------------------------------------------------------------------------
@@ -85,6 +85,10 @@ enum FLOW
 };
 enum FLOW update_flow = handshake;
 
+Uint16 receive_cmd_flag = 0;   //接收命令标志
+Uint16 start_data_flag = 0;  //允许接收消息标志
+Uint16 data_num = 0;   //接收的数据个数
+
 #pragma CODE_SECTION(FlashUpdate,"ramfuncs");
 void FlashUpdate()
 {
@@ -94,10 +98,8 @@ void FlashUpdate()
     Uint16 versionHex;     // Version of the API in decimal encoded hex
     Uint16 checkCode;      // CRC16 check code
 
-    //temp variables
-    Uint16 *addr;
-    Uint32 addr_32;
-    Uint16 i;
+    Uint16 *addr;    //Uint32转换为地址
+    Uint32 addr_32;  //32位地址变量
 
     can_msg_data data;
 
@@ -153,12 +155,12 @@ void FlashUpdate()
 
     while (1)
     {
-        if (receive_flag)
+        if (receive_cmd_flag)
         {
             DINT;
             //关闭全局中断
 
-            receive_flag = 0;
+            receive_cmd_flag = 0;
             data.byte.b0 = receive_msg.data.byte.b0;
             data.byte.b1 = receive_msg.data.byte.b1;
             data.byte.b2 = receive_msg.data.byte.b2;
@@ -228,14 +230,14 @@ void FlashUpdate()
                 break;
             case dataBlockInfo:
                 length = data.byte.b6 + (data.byte.b7 << 8);
-                i = 0;
-                //addr_32 = ((data.byte.b5 << 24) & 0xFF000000) | ((data.byte.b4 << 16) & 0x00FF0000) | ((data.byte.b3 << 8) & 0x0000FF00) | (data.byte.b2 & 0x000000FF);
                 addr_32 = (data.byte.b5 << 8) | (data.byte.b4 & 0x00FF);
                 addr_32 = (addr_32 << 16) | (((data.byte.b3 << 8) | (data.byte.b2 & 0x00FF)) & 0x0000FFFF);
                 addr = (Uint16*) addr_32;
                 if (addr == flash_ptr)
                 {
                     data.byte.b1 = 0x55;
+                    start_data_flag = 1;  //允许接收数据
+                    data_num = 0;  //接收数据个数
                 }
                 else
                 {
@@ -243,29 +245,8 @@ void FlashUpdate()
                 }
                 break;
             case flashData:
-                if (i < WORDS_IN_FLASH_BUFFER)
-                {
-                    buffer[i] = data.byte.b2 + (data.byte.b3 << 8);
-                    buffer[i + 1] = data.byte.b4 + (data.byte.b5 << 8);
-
-                    checkCode = Crc16(&buffer[i], 2);
-                    if (checkCode == (data.byte.b6 + (data.byte.b7 << 8)))
-                    {
-                        data.byte.b1 = 0x55;
-                        i += 2;
-                    }
-                    else
-                    {
-                        data.byte.b1 = 0x0;
-                    }
-
-                }
-                else
-                {
-                    data.byte.b1 = 0x0;
-                }
-                data.byte.b2 = i & 0xFF;
-                data.byte.b3 = (i >> 8) & 0x00FF;
+                data.byte.b1 = data_num & 0x00FF;
+                data.byte.b2 = (data_num >> 8) & 0x00FF;
                 break;
             case checkSum:
                 checkCode = Crc16(buffer, length);

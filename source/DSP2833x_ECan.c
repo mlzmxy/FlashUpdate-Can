@@ -64,6 +64,7 @@ void InitECana(void)		// Initialize eCAN-A module
 // all bits (including reserved bits) of MSGCTRL must be initialized to zero
 
     ECanaMboxes.MBOX0.MSGCTRL.all = 0x00000000;
+    ECanaMboxes.MBOX30.MSGCTRL.all = 0x00000000;
     ECanaMboxes.MBOX31.MSGCTRL.all = 0x00000000;
 
 // TAn, RMPn, GIFn bits are all zero upon reset and are cleared again
@@ -115,15 +116,17 @@ void InitECana(void)		// Initialize eCAN-A module
     // send mailboxes
  	ECanaMboxes.MBOX0.MSGID.all = SEND_CANID | EXTENDED_FRAME;
     // receive mailbox
+ 	ECanaMboxes.MBOX30.MSGID.all = RECEIVE_DATA_CANID | EXTENDED_FRAME;
     ECanaMboxes.MBOX31.MSGID.all = RECEIVE_CANID | EXTENDED_FRAME;
 
     // Configure Mailboxes 0-15 as Tx, 16-31 as Rx
     ECanaRegs.CANMD.all = 0xFFFF0000;
     // Enable all Mailboxes
-    ECanaRegs.CANME.all = 0x80000001;
+    ECanaRegs.CANME.all = 0xC0000001;
 
     // 邮箱数据长度
     ECanaMboxes.MBOX0.MSGCTRL.bit.DLC = 8;
+    ECanaMboxes.MBOX30.MSGCTRL.bit.DLC = 8;
     ECanaMboxes.MBOX31.MSGCTRL.bit.DLC = 8;
 
     // 设置优先级，仅用于发送邮箱
@@ -131,11 +134,14 @@ void InitECana(void)		// Initialize eCAN-A module
 
     // 没有远程帧请求
     ECanaMboxes.MBOX0.MSGCTRL.bit.RTR = 0;
+    ECanaMboxes.MBOX30.MSGCTRL.bit.RTR = 0;
     ECanaMboxes.MBOX31.MSGCTRL.bit.RTR = 0;
 
     // 初始化邮箱数据
     ECanaMboxes.MBOX0.MDL.all = 0;
     ECanaMboxes.MBOX0.MDH.all = 0;
+    ECanaMboxes.MBOX30.MDL.all = 0;
+    ECanaMboxes.MBOX30.MDH.all = 0;
     ECanaMboxes.MBOX31.MDL.all = 0;
     ECanaMboxes.MBOX31.MDH.all = 0;
     EDIS;
@@ -189,6 +195,7 @@ struct ECAN_REGS ECanbShadow;
 // all bits (including reserved bits) of MSGCTRL must be initialized to zero
 
     ECanbMboxes.MBOX0.MSGCTRL.all = 0x00000000;
+    ECanbMboxes.MBOX30.MSGCTRL.all = 0x00000000;
     ECanbMboxes.MBOX31.MSGCTRL.all = 0x00000000;
 
 
@@ -243,15 +250,17 @@ struct ECAN_REGS ECanbShadow;
     // send mailboxes
     ECanbMboxes.MBOX0.MSGID.all = SEND_CANID | EXTENDED_FRAME;
     // receive mailbox
+    ECanbMboxes.MBOX30.MSGID.all = RECEIVE_DATA_CANID | EXTENDED_FRAME;
     ECanbMboxes.MBOX31.MSGID.all = RECEIVE_CANID | EXTENDED_FRAME;
 
     // Configure Mailboxes 0-15 as Tx, 16-31 as Rx
     ECanbRegs.CANMD.all = 0xFFFF0000;
     // Enable all Mailboxes
-    ECanbRegs.CANME.all = 0x80000001;
+    ECanbRegs.CANME.all = 0xC0000001;
 
     // 邮箱数据长度
     ECanbMboxes.MBOX0.MSGCTRL.bit.DLC = 8;
+    ECanbMboxes.MBOX30.MSGCTRL.bit.DLC = 8;
     ECanbMboxes.MBOX31.MSGCTRL.bit.DLC = 8;
 
     // 设置优先级
@@ -259,11 +268,14 @@ struct ECAN_REGS ECanbShadow;
 
     // 没有远程帧请求
     ECanbMboxes.MBOX0.MSGCTRL.bit.RTR = 0;
+    ECanbMboxes.MBOX30.MSGCTRL.bit.RTR = 0;
     ECanbMboxes.MBOX31.MSGCTRL.bit.RTR = 0;
 
     // 初始化邮箱数据
     ECanbMboxes.MBOX0.MDL.all = 0;
     ECanbMboxes.MBOX0.MDH.all = 0;
+    ECanbMboxes.MBOX30.MDL.all = 0;
+    ECanbMboxes.MBOX30.MDH.all = 0;
     ECanbMboxes.MBOX31.MDL.all = 0;
     ECanbMboxes.MBOX31.MDH.all = 0;
     EDIS;
