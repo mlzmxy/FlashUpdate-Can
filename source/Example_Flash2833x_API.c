@@ -116,8 +116,8 @@ void FlashUpdate()
      ------------------------------------------------------------------*/
 
     //Copy the Flash API functions to SARAM
-//    MemCopy(&Flash28_API_LoadStart, &Flash28_API_LoadEnd,
-//            &Flash28_API_RunStart);
+    MemCopy(&Flash28_API_LoadStart, &Flash28_API_LoadEnd,
+            &Flash28_API_RunStart);
 
     /*------------------------------------------------------------------
      Initalize Flash_CPUScaleFactor.
@@ -186,8 +186,8 @@ void FlashUpdate()
                  (L0-L3) then this step is not required.
                  ------------------------------------------------------------------*/
 
-                //status = Example_CsmUnlock();
-                status = 0;  //测试
+                status = Example_CsmUnlock();
+                //status = 0;  //测试
                 if (status == STATUS_SUCCESS)
                 {
                     data.byte.b1 = 0x55;
@@ -204,19 +204,19 @@ void FlashUpdate()
                 GpioCtrlRegs.GPADIR.bit.GPIO0 = 1;
 
                 // Example: Toggle GPIO0
-                //Example_ToggleTest(0);
+                Example_ToggleTest(0);
 
                 data.byte.b1 = 0x55;
                 break;
             case version:
-                //versionHex = Flash_APIVersionHex();
-                versionHex = 0x0210;
+                versionHex = Flash_APIVersionHex();
+                //versionHex = 0x0210;
                 data.byte.b1 = versionHex & 0x00FF;
                 data.byte.b2 = versionHex >> 8;
                 break;
             case erase:
-                //status = Flash_Erase((SECTORC|SECTORD|SECTORE), &FlashStatus);
-                status = 0;
+                status = Flash_Erase((SECTORC|SECTORD|SECTORE), &FlashStatus);
+                //status = 0;
                 flash_ptr = Sector[2].StartAddr;
                 if (status == STATUS_SUCCESS)
                 {
@@ -262,8 +262,8 @@ void FlashUpdate()
             case program:
                 if ((flash_ptr + length) >= Sector[4].EndAddr)
                 {
-                    //status = Flash_Program(flash_ptr, buffer, length, &FlashStatus);
-                    status = 0;
+                    status = Flash_Program(flash_ptr, buffer, length, &FlashStatus);
+                    //status = 0;
                     flash_ptr += length;
                     if (status == STATUS_SUCCESS)
                     {
@@ -281,8 +281,8 @@ void FlashUpdate()
                 }
                 break;
             case verify:
-                //status = Flash_Verify(flash_ptr, buffer, length, &FlashStatus);
-                status = 0;
+                status = Flash_Verify(flash_ptr, buffer, length, &FlashStatus);
+                //status = 0;
                 if (status == STATUS_SUCCESS)
                 {
                     data.byte.b1 = 0x55;
@@ -298,7 +298,7 @@ void FlashUpdate()
                 break;
             case resetDSP:
                 data.byte.b1 = 0x55;
-                //EnableDog();  //使能看门狗
+                EnableDog();  //使能看门狗
                 break;
             }
             Canb_send_data(&data);

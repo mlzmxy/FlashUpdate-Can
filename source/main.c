@@ -16,6 +16,7 @@
 
 #include <stdio.h>   // Standard headers
 
+void (*p)() = (void (*)())0x328000;
 
 void main(void)
 {
@@ -39,8 +40,8 @@ void main(void)
     // Service Routines (ISR).
     InitPieVectTable();
 
-//    MemCopy(&RamfuncsLoadStart, &RamfuncsLoadEnd, &RamfuncsRunStart);
-//    InitFlash();
+    MemCopy(&RamfuncsLoadStart, &RamfuncsLoadEnd, &RamfuncsRunStart);
+    InitFlash();
 
     EALLOW;
     PieVectTable.ECAN0INTA = &ecan0a_isr;
@@ -60,17 +61,28 @@ void main(void)
     EINT;  // Enable Global interrupt INTM
     ERTM;  // Enable Global realtime interrupt DBGM
 
-    while (1)
-    {
+    GpioCtrlRegs.GPAMUX1.bit.GPIO1 = 0;
+    GpioCtrlRegs.GPADIR.bit.GPIO1 = 1;
+    GpioCtrlRegs.GPAMUX1.bit.GPIO6 = 0;
+    GpioCtrlRegs.GPADIR.bit.GPIO6 = 1;
+
+    GpioDataRegs.GPADAT.bit.GPIO1 = 1;
+    GpioDataRegs.GPADAT.bit.GPIO6 = 1;
+//    while (1)
+//    {
 //        if(0x5A5A == (*(volatile Uint16*)(0x33FF7F)))
 //        {
-            FlashUpdate();
+//            FlashUpdate();
 //        }
 //        else
 //        {
-//            asm(" LB 0x328000");
+            //asm(" LB 0x32FFFE");
+    (*p)();
 //        }
-    }
+//    }
+
+    GpioDataRegs.GPADAT.bit.GPIO1 = 0;
+    GpioDataRegs.GPADAT.bit.GPIO6 = 1;
 }
 
 
