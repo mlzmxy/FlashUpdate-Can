@@ -150,8 +150,10 @@ void FlashUpdate()
 
     MyCallbackCounter = 0; // Increment this counter in the callback function
 
-    // Jump to SARAM and call the Flash API functions
-    //Example_CallFlashAPI();
+    EALLOW;
+    GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 0;
+    GpioCtrlRegs.GPADIR.bit.GPIO0 = 1;
+    EDIS;
 
     while (1)
     {
@@ -200,9 +202,6 @@ void FlashUpdate()
 
                 break;
             case toggle:
-                GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 0;
-                GpioCtrlRegs.GPADIR.bit.GPIO0 = 1;
-
                 // Example: Toggle GPIO0
                 Example_ToggleTest(0);
 

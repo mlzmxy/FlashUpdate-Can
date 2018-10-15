@@ -165,7 +165,7 @@ SECTIONS
    .switch             : > FLASHA      PAGE = 0      
 
    /* Allocate IQ math areas: */
-   IQmath              : > FLASHC      PAGE = 0                  /* Math Code */
+   IQmath              : > FLASHA      PAGE = 0                  /* Math Code */
    IQmathTables     : > IQTABLES,  PAGE = 0, TYPE = NOLOAD 
    IQmathTables2    : > IQTABLES2, PAGE = 0, TYPE = NOLOAD 
    FPUmathTables    : > FPUTABLES, PAGE = 0, TYPE = NOLOAD 
