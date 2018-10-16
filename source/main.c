@@ -40,8 +40,8 @@ void main(void)
     // Service Routines (ISR).
     InitPieVectTable();
 
-    MemCopy(&RamfuncsLoadStart, &RamfuncsLoadEnd, &RamfuncsRunStart);
-    InitFlash();
+//    MemCopy(&RamfuncsLoadStart, &RamfuncsLoadEnd, &RamfuncsRunStart);
+//    InitFlash();
 
     EALLOW;
     PieVectTable.ECAN0INTA = &ecan0a_isr;
@@ -89,9 +89,9 @@ void main(void)
 //        }
 //        else
 //        {
-    DELAY_US(1000000);
+//    DELAY_US(1000000);
 //            asm(" LB 0x328000");
-    (*p)();
+//    (*p)();
 //        }
     }
 

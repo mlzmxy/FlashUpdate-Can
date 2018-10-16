@@ -116,8 +116,8 @@ void FlashUpdate()
      ------------------------------------------------------------------*/
 
     //Copy the Flash API functions to SARAM
-    MemCopy(&Flash28_API_LoadStart, &Flash28_API_LoadEnd,
-            &Flash28_API_RunStart);
+//    MemCopy(&Flash28_API_LoadStart, &Flash28_API_LoadEnd,
+//            &Flash28_API_RunStart);
 
     /*------------------------------------------------------------------
      Initalize Flash_CPUScaleFactor.
