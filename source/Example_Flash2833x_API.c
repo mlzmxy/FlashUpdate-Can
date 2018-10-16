@@ -89,7 +89,6 @@ Uint16 receive_cmd_flag = 0;   //接收命令标志
 Uint16 start_data_flag = 0;  //允许接收消息标志
 Uint16 data_num = 0;   //接收的数据个数
 
-#pragma CODE_SECTION(FlashUpdate,"ramfuncs");
 void FlashUpdate()
 {
     Uint16 status;
@@ -103,51 +102,8 @@ void FlashUpdate()
 
     can_msg_data data;
 
-    /*------------------------------------------------------------------
-     Copy API Functions into SARAM
-
-     The flash API functions MUST be run out of internal
-     zero-waitstate SARAM memory.  This is required for
-     the algos to execute at the proper CPU frequency.
-     If the algos are already in SARAM then this step
-     can be skipped.
-     DO NOT run the algos from Flash
-     DO NOT run the algos from external memory
-     ------------------------------------------------------------------*/
-
-    //Copy the Flash API functions to SARAM
-//    MemCopy(&Flash28_API_LoadStart, &Flash28_API_LoadEnd,
-//            &Flash28_API_RunStart);
-
-    /*------------------------------------------------------------------
-     Initalize Flash_CPUScaleFactor.
-
-     Flash_CPUScaleFactor is a 32-bit global variable that the flash
-     API functions use to scale software delays. This scale factor
-     must be initalized to SCALE_FACTOR by the user's code prior
-     to calling any of the Flash API functions. This initalization
-     is VITAL to the proper operation of the flash API functions.
-
-     SCALE_FACTOR is defined in Example_Flash2833x_API.h as
-     #define SCALE_FACTOR  1048576.0L*( (200L/CPU_RATE) )
-     
-     This value is calculated during the compile based on the CPU
-     rate, in nanoseconds, at which the algorithums will be run.
-     ------------------------------------------------------------------*/
-
     Flash_CPUScaleFactor = SCALE_FACTOR;
-
-    /*------------------------------------------------------------------
-     Initalize Flash_CallbackPtr.
-
-     Flash_CallbackPtr is a pointer to a function.  The API uses
-     this pointer to invoke a callback function during the API operations.
-     If this function is not going to be used, set the pointer to NULL
-     NULL is defined in <stdio.h>.
-     ------------------------------------------------------------------*/
-
     Flash_CallbackPtr = NULL;
-
     MyCallbackCounter = 0; // Increment this counter in the callback function
 
     EALLOW;
@@ -159,8 +115,7 @@ void FlashUpdate()
     {
         if (receive_cmd_flag)
         {
-            DINT;
-            //关闭全局中断
+            DINT;  //关闭全局中断
 
             receive_cmd_flag = 0;
             data.byte.b0 = receive_msg.data.byte.b0;
@@ -178,16 +133,6 @@ void FlashUpdate()
                 data.byte.b1 = 0x55;  //握手成功
                 break;
             case unlockCSM:
-                /*------------------------------------------------------------------
-                 Unlock the CSM.
-                 If the API functions are going to run in unsecured RAM
-                 then the CSM must be unlocked in order for the flash
-                 API functions to access the flash.
-
-                 If the flash API functions are executed from secure memory
-                 (L0-L3) then this step is not required.
-                 ------------------------------------------------------------------*/
-
                 status = Example_CsmUnlock();
                 //status = 0;  //测试
                 if (status == STATUS_SUCCESS)
@@ -197,25 +142,21 @@ void FlashUpdate()
                 else
                 {
                     data.byte.b1 = 0x0;
-                    //Example_Error(status);
                 }
 
                 break;
             case toggle:
                 // Example: Toggle GPIO0
                 Example_ToggleTest(0);
-
                 data.byte.b1 = 0x55;
                 break;
             case version:
                 versionHex = Flash_APIVersionHex();
-                //versionHex = 0x0210;
                 data.byte.b1 = versionHex & 0x00FF;
                 data.byte.b2 = versionHex >> 8;
                 break;
             case erase:
                 status = Flash_Erase((SECTORC|SECTORD|SECTORE), &FlashStatus);
-                //status = 0;
                 flash_ptr = Sector[2].StartAddr;
                 if (status == STATUS_SUCCESS)
                 {
@@ -224,7 +165,6 @@ void FlashUpdate()
                 else
                 {
                     data.byte.b1 = 0x0;
-                    //Example_Error(status);
                 }
                 break;
             case dataBlockInfo:
@@ -262,7 +202,6 @@ void FlashUpdate()
                 if ((flash_ptr + length) >= Sector[4].EndAddr)
                 {
                     status = Flash_Program(flash_ptr, buffer, length, &FlashStatus);
-                    //status = 0;
                     flash_ptr += length;
                     if (status == STATUS_SUCCESS)
                     {
@@ -271,7 +210,6 @@ void FlashUpdate()
                     else
                     {
                         data.byte.b1 = 0x0;
-                        //Example_Error(Status);
                     }
                 }
                 else
@@ -281,7 +219,6 @@ void FlashUpdate()
                 break;
             case verify:
                 status = Flash_Verify(flash_ptr, buffer, length, &FlashStatus);
-                //status = 0;
                 if (status == STATUS_SUCCESS)
                 {
                     data.byte.b1 = 0x55;
@@ -289,7 +226,6 @@ void FlashUpdate()
                 else
                 {
                     data.byte.b1 = 0x0;
-                    //Example_Error(Status);
                 }
                 break;
             case changeUpdateFlag:  //不是必须？
@@ -301,8 +237,7 @@ void FlashUpdate()
                 break;
             }
             Canb_send_data(&data);
-            EINT;
-            //开全局中断
+            EINT;  //开全局中断
         }
     }
 
@@ -453,7 +388,7 @@ void Example_MemCopy(Uint16 *SourceAddr, Uint16* SourceEndAddr,
 /*------------------------------------------------------------------
  For this example, if an error is found just stop here
  -----------------------------------------------------------------*/
-#pragma CODE_SECTION(Example_Error,"ramfuncs");
+//#pragma CODE_SECTION(Example_Error,"ramfuncs");
 void Example_Error(Uint16 Status)
 {
 
@@ -465,7 +400,7 @@ void Example_Error(Uint16 Status)
 /*------------------------------------------------------------------
  For this example, once we are done just stop here
  -----------------------------------------------------------------*/
-#pragma CODE_SECTION(Example_Done,"ramfuncs");
+//#pragma CODE_SECTION(Example_Done,"ramfuncs");
 void Example_Done(void)
 {
 
@@ -476,7 +411,7 @@ void Example_Done(void)
 /*------------------------------------------------------------------
  Callback function - must be executed from outside flash/OTP
  -----------------------------------------------------------------*/
-#pragma CODE_SECTION(MyCallbackFunction,"ramfuncs");
+//#pragma CODE_SECTION(MyCallbackFunction,"ramfuncs");
 void MyCallbackFunction(void)
 {
 // Toggle pin, service external watchdog etc

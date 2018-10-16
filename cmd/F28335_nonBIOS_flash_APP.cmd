@@ -1,4 +1,6 @@
 /*
+// TI File $Revision: /main/10 $
+// Checkin $Date: July 9, 2008   13:43:56 $
 //###########################################################################
 //
 // FILE:	F28335.cmd
@@ -6,8 +8,8 @@
 // TITLE:	Linker Command File For F28335 Device
 //
 //###########################################################################
-// $TI Release: F28335 API Release V2.10 $
-// $Release Date: August 18, 2008 $
+// $TI Release:$
+// $Release Date:$
 //###########################################################################
 */
 
@@ -75,23 +77,21 @@ PAGE 0:    /* Program Memory */
    ZONE0       : origin = 0x004000, length = 0x001000     /* XINTF zone 0 */
    RAML0       : origin = 0x008000, length = 0x001000     /* on-chip RAM block L0 */
    RAML1       : origin = 0x009000, length = 0x001000     /* on-chip RAM block L1 */
-   RAML2       : origin = 0x00A000, length = 0x001000     /* on-chip RAM block L2 */
-   RAML3       : origin = 0x00B000, length = 0x001000     /* on-chip RAM block L3 */
+   RAM_L2L3    : origin = 0x00A000, length = 0x002000     /* on-chip RAM L2L3 */
    ZONE6       : origin = 0x0100000, length = 0x100000    /* XINTF zone 6 */ 
    ZONE7A      : origin = 0x0200000, length = 0x00FC00    /* XINTF zone 7 - program space */ 
    FLASHH      : origin = 0x300000, length = 0x008000     /* on-chip FLASH */
    FLASHG      : origin = 0x308000, length = 0x008000     /* on-chip FLASH */
    FLASHF      : origin = 0x310000, length = 0x008000     /* on-chip FLASH */
-   FLASHE      : origin = 0x318000, length = 0x008000     /* on-chip FLASH */
-   FLASHD      : origin = 0x320000, length = 0x008000     /* on-chip FLASH */
-   FLASHC      : origin = 0x328000, length = 0x008000     /* on-chip FLASH */
+   APP_BEGIN   : origin = 0x318000, length = 0x000002     /* on-chip FLASH */
+   APP_FLASH   : origin = 0x318002, length = 0x017FFD     /* on-chip FLASH C D E*/
+   UPDATE_FLAG : origin = 0x32FFFF, length = 0x000001     /* on-chip FLASH C D E*/
    FLASHA      : origin = 0x338000, length = 0x007F80     /* on-chip FLASH */
    CSM_RSVD    : origin = 0x33FF80, length = 0x000076     /* Part of FLASHA.  Program with all 0x0000 when CSM is in use. */
    BEGIN       : origin = 0x33FFF6, length = 0x000002     /* Part of FLASHA.  Used for "boot to Flash" bootloader mode. */
    CSM_PWL     : origin = 0x33FFF8, length = 0x000008     /* Part of FLASHA.  CSM password locations in FLASHA */
    OTP         : origin = 0x380400, length = 0x000400     /* on-chip OTP */
    ADC_CAL     : origin = 0x380080, length = 0x000009     /* ADC_cal function in Reserved memory */
-   
    IQTABLES    : origin = 0x3FE000, length = 0x000b50     /* IQ Math Tables in Boot ROM */
    IQTABLES2   : origin = 0x3FEB50, length = 0x00008c     /* IQ Math Tables in Boot ROM */  
    FPUTABLES   : origin = 0x3FEBDC, length = 0x0006A0     /* FPU Tables in Boot ROM */
@@ -123,51 +123,62 @@ PAGE 1 :   /* Data Memory */
  
 SECTIONS
 {
- 
    /* Allocate program areas: */
-   /* The Flash API functions can be grouped together as shown below.
-      The defined symbols _Flash28_API_LoadStart, _Flash28_API_LoadEnd
-      and _Flash28_API_RunStart are used to copy the API functions out
-      of flash memory and into SARAM */
-
-   Flash28_API:
+      Flash28_API:
    {
-        -lFlash28335_API_V210.lib(.econst) 
+        -lFlash28335_API_V210.lib(.econst)
         -lFlash28335_API_V210.lib(.text)
-   }                   LOAD = FLASHA,
-                       RUN = RAML0,  
+   }                   LOAD = APP_FLASH,
+                       RUN = RAM_L2L3,
                        LOAD_START(_Flash28_API_LoadStart),
                        LOAD_END(_Flash28_API_LoadEnd),
                        RUN_START(_Flash28_API_RunStart),
                        PAGE = 0
-   .cinit              : > FLASHA      PAGE = 0
-   .pinit              : > FLASHA,     PAGE = 0
-   .text               : > FLASHA      PAGE = 0
-   codestart           : > BEGIN       PAGE = 0
-   ramfuncs            : LOAD = FLASHA,
-                         RUN = RAML0, 
+   .cinit              : > APP_FLASH      PAGE = 0
+   .pinit              : > APP_FLASH      PAGE = 0
+   .text               : > APP_FLASH      PAGE = 0
+   codestart           : > APP_BEGIN       PAGE = 0
+                         
+   ramfuncs            : LOAD = APP_FLASH,
+                         RUN = RAM_L2L3,
                          LOAD_START(_RamfuncsLoadStart),
                          LOAD_END(_RamfuncsLoadEnd),
                          RUN_START(_RamfuncsRunStart),
-                         PAGE = 0
+                         PAGE = 0   
 
    csmpasswds          : > CSM_PWL     PAGE = 0
    csm_rsvd            : > CSM_RSVD    PAGE = 0
    
    /* Allocate uninitalized data sections: */
-   .stack              : > RAMM1       PAGE = 1
+   .stack              : > RAML4       PAGE = 1
    .ebss               : > RAML4       PAGE = 1
-   .esysmem            : > RAMM1       PAGE = 1
+   .esysmem            : > RAML4       PAGE = 1
 
    /* Initalized sections go in Flash */
    /* For SDFlash to program these, they must be allocated to page 0 */
-   .econst             : > FLASHA      PAGE = 0
-   .switch             : > FLASHA      PAGE = 0      
+   .econst             : > APP_FLASH      PAGE = 0
+   .switch             : > APP_FLASH      PAGE = 0
 
    /* Allocate IQ math areas: */
-   IQmath              : > FLASHA      PAGE = 0                  /* Math Code */
+   IQmath              : > APP_FLASH      PAGE = 0                  /* Math Code */
    IQmathTables     : > IQTABLES,  PAGE = 0, TYPE = NOLOAD 
+   
+   /* Uncomment the section below if calling the IQNexp() or IQexp()
+      functions from the IQMath.lib library in order to utilize the 
+      relevant IQ Math table in Boot ROM (This saves space and Boot ROM 
+      is 1 wait-state). If this section is not uncommented, IQmathTables2
+      will be loaded into other memory (SARAM, Flash, etc.) and will take
+      up space, but 0 wait-state is possible.
+   */
+   /*
    IQmathTables2    : > IQTABLES2, PAGE = 0, TYPE = NOLOAD 
+   {
+   
+              IQmath.lib<IQNexpTable.obj> (IQmathTablesRam)
+   
+   }
+   */
+   
    FPUmathTables    : > FPUTABLES, PAGE = 0, TYPE = NOLOAD 
          
    /* Allocate DMA-accessible RAM sections: */

@@ -16,8 +16,6 @@
 
 #include <stdio.h>   // Standard headers
 
-void (*p)() = (void (*)())0x328000;
-
 void main(void)
 {
     // Initialize System Control
@@ -61,41 +59,43 @@ void main(void)
     EINT;  // Enable Global interrupt INTM
     ERTM;  // Enable Global realtime interrupt DBGM
 
-    EALLOW;
-       GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 0;
-       GpioCtrlRegs.GPADIR.bit.GPIO0 = 1;
-       GpioCtrlRegs.GPAMUX1.bit.GPIO1 = 0;
-       GpioCtrlRegs.GPADIR.bit.GPIO1 = 1;
-       GpioCtrlRegs.GPAMUX1.bit.GPIO6 = 0;
-       GpioCtrlRegs.GPADIR.bit.GPIO6 = 1;
-       GpioCtrlRegs.GPAMUX1.bit.GPIO7 = 0;
-       GpioCtrlRegs.GPADIR.bit.GPIO7 = 1;
-       EDIS;
 
-       GpioDataRegs.GPASET.bit.GPIO0;
-       DELAY_US(10);
-       GpioDataRegs.GPASET.bit.GPIO1;
-       DELAY_US(10);
-       GpioDataRegs.GPASET.bit.GPIO6;
-       DELAY_US(10);
-       GpioDataRegs.GPASET.bit.GPIO7;
-       DELAY_US(10);
+    EALLOW;
+    GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 0;
+    GpioCtrlRegs.GPADIR.bit.GPIO0 = 1;
+    GpioCtrlRegs.GPAMUX1.bit.GPIO1 = 0;
+    GpioCtrlRegs.GPADIR.bit.GPIO1 = 1;
+    GpioCtrlRegs.GPAMUX1.bit.GPIO6 = 0;
+    GpioCtrlRegs.GPADIR.bit.GPIO6 = 1;
+    GpioCtrlRegs.GPAMUX1.bit.GPIO7 = 0;
+    GpioCtrlRegs.GPADIR.bit.GPIO7 = 1;
+    EDIS;
+
+    GpioDataRegs.GPASET.bit.GPIO0;
+    DELAY_US(10);
+    GpioDataRegs.GPASET.bit.GPIO1;
+    DELAY_US(10);
+    GpioDataRegs.GPASET.bit.GPIO6;
+    DELAY_US(10);
+    GpioDataRegs.GPASET.bit.GPIO7;
+    DELAY_US(10);
 
     while (1)
     {
-//        if(0x5A5A == (*(volatile Uint16*)(0x33FF7F)))
-//        {
-//            FlashUpdate();
-//        }
-//        else
-//        {
-//    DELAY_US(1000000);
-//            asm(" LB 0x328000");
-//    (*p)();
-//        }
+        if (0x5A5A == (*(volatile Uint16*) (0x32FFFF)))
+        {
+            FlashUpdate();
+        }
+        else
+        {
+            asm(" LB 0x318000");
+        }
     }
 
 }
+
+
+
 
 
 

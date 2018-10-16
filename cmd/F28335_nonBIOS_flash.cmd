@@ -26,10 +26,7 @@ PAGE 0:    /* Program Memory */
     FLASHF      : origin = 0x310000, length = 0x008000     /* on-chip FLASH */
     FLASHE      : origin = 0x318000, length = 0x008000     /* on-chip FLASH */
     FLASHD      : origin = 0x320000, length = 0x008000     /* on-chip FLASH */
-    APP_BEGIN   : origin = 0x328000, length = 0x000002     /* on-chip FLASH */
-    APP_BRANCH  : origin = 0x328002, length = 0x00000E     /* on-chip FLASH */
-    FLASHC      : origin = 0x328010, length = 0x007FEE     /* on-chip FLASH */
-    FLASH_FLAG  : origin = 0x32FFFE, length = 0x000002     /* on-chip FLASH */
+    FLASHC      : origin = 0x328000, length = 0x008000     /* on-chip FLASH */
     FLASHA      : origin = 0x338000, length = 0x007F80     /* on-chip FLASH */
     CSM_RSVD    : origin = 0x33FF80, length = 0x000076     /* Part of FLASHA.  Program with all 0x0000 when CSM is in use. */
     BEGIN_FLASH : origin = 0x33FFF6, length = 0x000002     /* Part of FLASHA.  Used for "boot to Flash" bootloader mode. */
@@ -67,12 +64,12 @@ SECTIONS
    	csm_rsvd        : > CSM_RSVD    	PAGE = 0
 
 /*** User Defined Sections ***/
-   	codestart       : > APP_BEGIN,	PAGE = 0        /* Used by file CodeStartBranch.asm */
-   	wddisable		: > FLASHC,			PAGE = 0
-  	copysections	: > FLASHC,			PAGE = 0
+   	codestart       : > BEGIN_FLASH,	PAGE = 0        /* Used by file CodeStartBranch.asm */
+   	wddisable		: > FLASHA,			PAGE = 0	
+  	copysections	: > FLASHA,			PAGE = 0
 
 	 /* Allocate IQ math areas: */
-   IQmath           : > FLASHC     		PAGE = 0        /* Math Code */
+   IQmath           : > FLASHA     		PAGE = 0        /* Math Code */
    IQmathTables     : > IQTABLES,  		PAGE = 0, TYPE = NOLOAD 
    IQmathTables2    : > IQTABLES2, 		PAGE = 0, TYPE = NOLOAD 
    FPUmathTables    : > FPUTABLES, 		PAGE = 0, TYPE = NOLOAD 
@@ -103,48 +100,37 @@ SECTIONS
    	.esysmem        : > RAMM1       	PAGE = 1
 
 /*** Initialized Sections ***/
-/*   Flash28_API:
-   {
-        -lFlash28335_API_V210.lib(.econst)
-        -lFlash28335_API_V210.lib(.text)
-   }                   LOAD = FLASHA,
-                       RUN = RAM_L0L1,
-                       LOAD_START(_Flash28_API_LoadStart),
-                       LOAD_END(_Flash28_API_LoadEnd),
-                       RUN_START(_Flash28_API_RunStart),
-                       PAGE = 0*/
-
-  	.cinit			:	LOAD = FLASHC,		PAGE = 0        /* can be ROM */
+  	.cinit			:	LOAD = FLASHA,		PAGE = 0        /* can be ROM */ 
                 		RUN = RAM_L0L1, PAGE = 0   		/* must be CSM secured RAM */
                 		LOAD_START(_cinit_loadstart),
                 		RUN_START(_cinit_runstart),
                 		SIZE(_cinit_size)
 
-	.const			:   LOAD = FLASHC,  	PAGE = 0        /* can be ROM */
+	.const			:   LOAD = FLASHA,  	PAGE = 0        /* can be ROM */ 
                 		RUN = RAM_L0L1,	PAGE = 0        /* must be CSM secured RAM */
                 		LOAD_START(_const_loadstart),
                 		RUN_START(_const_runstart),
                 		SIZE(_const_size)
 
-	.econst			:   LOAD = FLASHC,  	PAGE = 0        /* can be ROM */
+	.econst			:   LOAD = FLASHA,  	PAGE = 0        /* can be ROM */ 
                 		RUN = RAM_L0L1, PAGE = 0        /* must be CSM secured RAM */
                 		LOAD_START(_econst_loadstart),
                			RUN_START(_econst_runstart),
                 		SIZE(_econst_size)
 
-	.pinit			:   LOAD = FLASHC,  	PAGE = 0        /* can be ROM */
+	.pinit			:   LOAD = FLASHA,  	PAGE = 0        /* can be ROM */ 
                 		RUN = RAM_L0L1, PAGE = 0        /* must be CSM secured RAM */
                 		LOAD_START(_pinit_loadstart),
                 		RUN_START(_pinit_runstart),
                 		SIZE(_pinit_size)
 
-	.switch			:   LOAD = FLASHC,  	PAGE = 0        /* can be ROM */
+	.switch			:   LOAD = FLASHA,  	PAGE = 0        /* can be ROM */ 
                 		RUN = RAM_L0L1, PAGE = 0        /* must be CSM secured RAM */
                 		LOAD_START(_switch_loadstart),
                 		RUN_START(_switch_runstart),
                 		SIZE(_switch_size)
 
-	.text			:   LOAD = FLASHC, 		PAGE = 0        /* can be ROM */
+	.text			:   LOAD = FLASHA, 		PAGE = 0        /* can be ROM */ 
                 		RUN = RAM_L0L1, PAGE = 0        /* must be CSM secured RAM */
                 		LOAD_START(_text_loadstart),
                 		RUN_START(_text_runstart),
