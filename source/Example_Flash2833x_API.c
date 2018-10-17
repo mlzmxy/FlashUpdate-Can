@@ -30,10 +30,6 @@
 /*---- Standard headers -------------------------------------------------------*/
 #include <stdio.h>
 
-/*--- Callback function.  Function specified by defining Flash_CallbackPtr */
-void MyCallbackFunction(void);
-Uint32 MyCallbackCounter; // Just increment a counter in the callback function
-
 /*--- Global variables used to interface to the flash routines */
 FLASH_ST FlashStatus;
 
@@ -73,15 +69,14 @@ enum FLOW
 {
     handshake = 0x10,
     unlockCSM = 0x11,
-    toggle = 0x12,
-    version = 0x13,
-    erase = 0x14,
-    dataBlockInfo = 0x15,
-    flashData = 0x16,
-    checkSum = 0x17,
-    program = 0x18,
-    verify = 0x19,
-    resetDSP = 0x1A
+    version = 0x12,
+    erase = 0x13,
+    dataBlockInfo = 0x14,
+    flashData = 0x15,
+    checkSum = 0x16,
+    program = 0x17,
+    verify = 0x18,
+    resetDSP = 0x19
 };
 enum FLOW update_flow = handshake;
 
@@ -101,10 +96,14 @@ void FlashUpdate()
     Uint32 addr_32;  //32位地址变量
 
     can_msg_data data;
+    data.word.u32[0] = 0;
+    data.word.u32[1] = 0;
 
     Flash_CPUScaleFactor = SCALE_FACTOR;
     Flash_CallbackPtr = NULL;
-    MyCallbackCounter = 0; // Increment this counter in the callback function
+
+    data.byte.b0 = handshake;
+    Canb_send_data(&data);  //主动发送握手帧
 
     while (1)
     {
@@ -130,7 +129,6 @@ void FlashUpdate()
                 break;
             case unlockCSM:
                 status = Example_CsmUnlock();
-                //status = 0;  //测试
                 if (status == STATUS_SUCCESS)
                 {
                     data.byte.b1 = 0x55;
@@ -140,11 +138,6 @@ void FlashUpdate()
                     data.byte.b1 = 0x0;
                 }
 
-                break;
-            case toggle:
-                // Example: Toggle GPIO0
-                //Example_ToggleTest(0);
-                data.byte.b1 = 0x55;
                 break;
             case version:
                 versionHex = Flash_APIVersionHex();
@@ -287,129 +280,6 @@ Uint16 Example_CsmUnlock()
         return STATUS_SUCCESS;
     else
         return STATUS_FAIL_CSM_LOCKED;
-
-}
-
-/*------------------------------------------------------------------
- Example_ToggleTest
-
- This function shows example calls to the ToggleTest.
-
- This test is used to Toggle a GPIO pin at a known rate and thus
- confirm the frequency configuration of the API functions.
-
- A pin should be selected based on the hardware being used.
-
- Return Value: The toggle test does not return.  It will loop
- forever and is used only for testing purposes.
-
- Notes:
- ----------------------------------------------------------------*/
-void Example_ToggleTest(Uint16 PinNumber)
-{
-    Uint32 mask;
-
-// Before calling the Toggle Test, we must setup
-// the MUX and DIR registers.
-
-    if (PinNumber > (Uint16) 34)
-    {
-        asm("    ESTOP0");
-        // Stop here. Invalid option.
-        for (;;)
-            ;
-    }
-
-// Pins GPIO16-GPIO31
-    else if (PinNumber >= 32)
-    {
-        EALLOW;
-        mask = ~(((Uint32) 1 << (PinNumber - 16) * 2)
-                | ((Uint32) 1 << (PinNumber - 32) * 2 + 1));
-        GpioCtrlRegs.GPBMUX1.all &= mask;
-        GpioCtrlRegs.GPBDIR.all = GpioCtrlRegs.GPADIR.all
-                | ((Uint32) 1 << (PinNumber - 32));
-        Flash_ToggleTest(&GpioDataRegs.GPBTOGGLE.all,
-                         ((Uint32 )1 << PinNumber));
-        EDIS;
-    }
-
-// Pins GPIO16-GPIO31
-    else if (PinNumber >= 16)
-    {
-        EALLOW;
-        mask = ~(((Uint32) 1 << (PinNumber - 16) * 2)
-                | ((Uint32) 1 << (PinNumber - 16) * 2 + 1));
-        GpioCtrlRegs.GPAMUX2.all &= mask;
-        GpioCtrlRegs.GPADIR.all = GpioCtrlRegs.GPADIR.all
-                | ((Uint32) 1 << PinNumber);
-        Flash_ToggleTest(&GpioDataRegs.GPATOGGLE.all,
-                         ((Uint32 )1 << PinNumber));
-        EDIS;
-    }
-
-// Pins GPIO0-GPIO15
-    else
-    {
-        EALLOW;
-        mask = ~(((Uint32) 1 << PinNumber * 2)
-                | ((Uint32) 1 << PinNumber * 2 + 1));
-        GpioCtrlRegs.GPAMUX1.all &= mask;
-        GpioCtrlRegs.GPADIR.all = GpioCtrlRegs.GPADIR.all
-                | ((Uint32) 1 << PinNumber);
-        EDIS;
-        Flash_ToggleTest(&GpioDataRegs.GPATOGGLE.all,
-                         ((Uint32 )1 << PinNumber));
-    }
-
-}
-
-/*------------------------------------------------------------------
- Simple memory copy routine to move code out of flash into SARAM
- -----------------------------------------------------------------*/
-
-void Example_MemCopy(Uint16 *SourceAddr, Uint16* SourceEndAddr,
-                     Uint16* DestAddr)
-{
-    while (SourceAddr < SourceEndAddr)
-    {
-        *DestAddr++ = *SourceAddr++;
-    }
-    return;
-}
-
-/*------------------------------------------------------------------
- For this example, if an error is found just stop here
- -----------------------------------------------------------------*/
-//#pragma CODE_SECTION(Example_Error,"ramfuncs");
-void Example_Error(Uint16 Status)
-{
-
-//  Error code will be in the AL register. 
-    asm("    ESTOP0");
-    asm("    SB 0, UNC");
-}
-
-/*------------------------------------------------------------------
- For this example, once we are done just stop here
- -----------------------------------------------------------------*/
-//#pragma CODE_SECTION(Example_Done,"ramfuncs");
-void Example_Done(void)
-{
-
-    asm("    ESTOP0");
-    asm("    SB 0, UNC");
-}
-
-/*------------------------------------------------------------------
- Callback function - must be executed from outside flash/OTP
- -----------------------------------------------------------------*/
-//#pragma CODE_SECTION(MyCallbackFunction,"ramfuncs");
-void MyCallbackFunction(void)
-{
-// Toggle pin, service external watchdog etc
-    MyCallbackCounter++;
-    asm("    NOP");
 
 }
 

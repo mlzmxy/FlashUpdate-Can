@@ -84,8 +84,7 @@ PAGE 0:    /* Program Memory */
    FLASHG      : origin = 0x308000, length = 0x008000     /* on-chip FLASH */
    FLASHF      : origin = 0x310000, length = 0x008000     /* on-chip FLASH */
    APP_BEGIN   : origin = 0x318000, length = 0x000002     /* on-chip FLASH */
-   APP_FLASH   : origin = 0x318002, length = 0x017FFD     /* on-chip FLASH C D E*/
-   UPDATE_FLAG : origin = 0x32FFFF, length = 0x000001     /* on-chip FLASH C D E*/
+   APP_FLASH   : origin = 0x318002, length = 0x017FFE     /* on-chip FLASH C D E*/
    FLASHA      : origin = 0x338000, length = 0x007F80     /* on-chip FLASH */
    CSM_RSVD    : origin = 0x33FF80, length = 0x000076     /* Part of FLASHA.  Program with all 0x0000 when CSM is in use. */
    BEGIN       : origin = 0x33FFF6, length = 0x000002     /* Part of FLASHA.  Used for "boot to Flash" bootloader mode. */
@@ -124,16 +123,6 @@ PAGE 1 :   /* Data Memory */
 SECTIONS
 {
    /* Allocate program areas: */
-      Flash28_API:
-   {
-        -lFlash28335_API_V210.lib(.econst)
-        -lFlash28335_API_V210.lib(.text)
-   }                   LOAD = APP_FLASH,
-                       RUN = RAM_L2L3,
-                       LOAD_START(_Flash28_API_LoadStart),
-                       LOAD_END(_Flash28_API_LoadEnd),
-                       RUN_START(_Flash28_API_RunStart),
-                       PAGE = 0
    .cinit              : > APP_FLASH      PAGE = 0
    .pinit              : > APP_FLASH      PAGE = 0
    .text               : > APP_FLASH      PAGE = 0
@@ -150,9 +139,9 @@ SECTIONS
    csm_rsvd            : > CSM_RSVD    PAGE = 0
    
    /* Allocate uninitalized data sections: */
-   .stack              : > RAML4       PAGE = 1
-   .ebss               : > RAML4       PAGE = 1
-   .esysmem            : > RAML4       PAGE = 1
+   .stack              : > RAMM1       PAGE = 1
+   .ebss               : > RAML5       PAGE = 1
+   .esysmem            : > RAML5       PAGE = 1
 
    /* Initalized sections go in Flash */
    /* For SDFlash to program these, they must be allocated to page 0 */

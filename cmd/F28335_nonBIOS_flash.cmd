@@ -44,9 +44,9 @@ PAGE 1 :   /* Data Memory */
            /* Memory (RAM/FLASH/OTP) blocks can be moved to PAGE0 for program allocation */
            /* Registers remain on PAGE1                                                  */
 
-   	RAMM0       : origin = 0x000000, length = 0x000400     /* on-chip RAM block M0 */
-   	BOOT_RSVD   : origin = 0x000400, length = 0x000080     /* Part of M1, BOOT rom will use this for stack */
-   	RAMM1       : origin = 0x000480, length = 0x000380     /* on-chip RAM block M1 */
+    BOOT_RSVD   : origin = 0x000000, length = 0x000050     /* Part of M0, BOOT rom will use this for stack */
+    RAMM0       : origin = 0x000050, length = 0x0003B0     /* on-chip RAM block M0 */
+    RAMM1       : origin = 0x000400, length = 0x000400     /* on-chip RAM block M1 */
 	RAML4       : origin = 0x00C000, length = 0x001000     /* on-chip RAM block L4 */
     RAML5       : origin = 0x00D000, length = 0x001000     /* on-chip RAM block L5 */
     RAML6       : origin = 0x00E000, length = 0x001000     /* on-chip RAM block L6 */
@@ -96,8 +96,8 @@ SECTIONS
 
 /*** Uninitialized Sections ***/
    	.stack          : > RAMM0       	PAGE = 1
-   	.ebss           : > RAMM1       	PAGE = 1
-   	.esysmem        : > RAMM1       	PAGE = 1
+   	.ebss           : > RAML4       	PAGE = 1
+   	.esysmem        : > RAML4       	PAGE = 1
 
 /*** Initialized Sections ***/
   	.cinit			:	LOAD = FLASHA,		PAGE = 0        /* can be ROM */ 

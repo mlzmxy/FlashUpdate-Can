@@ -8,7 +8,7 @@
 #ifndef PROJECT_H_
 #define PROJECT_H_
 
-#define  WORDS_IN_FLASH_BUFFER 0x200      // Programming data buffer, Words
+#define  WORDS_IN_FLASH_BUFFER 0x800      // Programming data buffer, Words
 
 //---------------------------------------------------------------------------
 // extern variables

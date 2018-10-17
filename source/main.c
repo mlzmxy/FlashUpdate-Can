@@ -52,7 +52,7 @@ void main(void)
     InitECan();
     // Init and configue CpuTimer0
     InitCpuTimers();
-    ConfigCpuTimer(&CpuTimer0, 150, 500000);  //500ms定时器
+    ConfigCpuTimer(&CpuTimer0, 150, 200000);  //200ms定时器
 
     // Enable INT in PIE
     PieCtrlRegs.PIECTRL.bit.ENPIE = 1;  //enable PIE
@@ -67,11 +67,6 @@ void main(void)
     ERTM;  // Enable Global realtime interrupt DBGM
 
     StartCpuTimer0();
-
-    EALLOW;
-    GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 0;
-    GpioCtrlRegs.GPADIR.bit.GPIO0 = 1;
-    EDIS;
 
     FlashUpdate();
 }
