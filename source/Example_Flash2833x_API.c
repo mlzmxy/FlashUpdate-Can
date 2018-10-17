@@ -106,11 +106,6 @@ void FlashUpdate()
     Flash_CallbackPtr = NULL;
     MyCallbackCounter = 0; // Increment this counter in the callback function
 
-    EALLOW;
-    GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 0;
-    GpioCtrlRegs.GPADIR.bit.GPIO0 = 1;
-    EDIS;
-
     while (1)
     {
         if (receive_cmd_flag)
