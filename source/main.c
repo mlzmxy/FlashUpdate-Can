@@ -16,6 +16,10 @@
 
 #include <stdio.h>   // Standard headers
 
+interrupt void cpu_timer0_isr();  // CpuTimer0 interrupt function
+
+Uint16 upgrade_flag = 0;  //升级标志
+
 void main(void)
 {
     // Initialize System Control
@@ -38,60 +42,56 @@ void main(void)
     // Service Routines (ISR).
     InitPieVectTable();
 
-//    MemCopy(&RamfuncsLoadStart, &RamfuncsLoadEnd, &RamfuncsRunStart);
-//    InitFlash();
-
     EALLOW;
+    PieVectTable.TINT0 = &cpu_timer0_isr;
     PieVectTable.ECAN0INTA = &ecan0a_isr;
     PieVectTable.ECAN0INTB = &ecan0b_isr;
     EDIS;
 
     // Initialize all the Device Peripherals
     InitECan();
+    // Init and configue CpuTimer0
+    InitCpuTimers();
+    ConfigCpuTimer(&CpuTimer0, 150, 500000);  //500ms定时器
 
     // Enable INT in PIE
     PieCtrlRegs.PIECTRL.bit.ENPIE = 1;  //enable PIE
+    PieCtrlRegs.PIEIER1.bit.INTx7 = 1;  //CpuTimer0
     PieCtrlRegs.PIEIER9.bit.INTx5 = 1;  //ECAN0INTA  eCANA
     PieCtrlRegs.PIEIER9.bit.INTx7 = 1;  //ECAN0INTB  eCANB
 
+    IER |= M_INT1;  // Enable CPU Interrupt 1 - CpuTimer0
     IER |= M_INT9;  // Enable CPU Interrupt 9 - CAN
 
     EINT;  // Enable Global interrupt INTM
     ERTM;  // Enable Global realtime interrupt DBGM
 
+    StartCpuTimer0();
 
     EALLOW;
     GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 0;
     GpioCtrlRegs.GPADIR.bit.GPIO0 = 1;
-    GpioCtrlRegs.GPAMUX1.bit.GPIO1 = 0;
-    GpioCtrlRegs.GPADIR.bit.GPIO1 = 1;
-    GpioCtrlRegs.GPAMUX1.bit.GPIO6 = 0;
-    GpioCtrlRegs.GPADIR.bit.GPIO6 = 1;
-    GpioCtrlRegs.GPAMUX1.bit.GPIO7 = 0;
-    GpioCtrlRegs.GPADIR.bit.GPIO7 = 1;
     EDIS;
 
-    GpioDataRegs.GPASET.bit.GPIO0;
-    DELAY_US(10);
-    GpioDataRegs.GPASET.bit.GPIO1;
-    DELAY_US(10);
-    GpioDataRegs.GPASET.bit.GPIO6;
-    DELAY_US(10);
-    GpioDataRegs.GPASET.bit.GPIO7;
-    DELAY_US(10);
+    FlashUpdate();
+}
 
-    while (1)
+//---------------------------------------------------------------------------
+// CpuTimer0 interrupt function
+//---------------------------------------------------------------------------
+// 500ms定时器中断
+//
+interrupt void cpu_timer0_isr()
+{
+    if(0 == upgrade_flag)
     {
-        if (0x5A5A == (*(volatile Uint16*) (0x32FFFF)))
-        {
-            FlashUpdate();
-        }
-        else
-        {
-            asm(" LB 0x318000");
-        }
+        asm(" LB 0x318000");
     }
 
+    StopCpuTimer0();
+    PieCtrlRegs.PIEACK.all = PIEACK_GROUP1;
+    CpuTimer0Regs.TCR.bit.TIF = 1;  //清除cpu定时器中断标志位
+    CpuTimer0Regs.TCR.bit.TRB = 1;  //定时器重载
 }
 
 

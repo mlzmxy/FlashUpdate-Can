@@ -67,6 +67,7 @@ SECTOR Sector[8] = { (Uint16 *) 0x338000, (Uint16 *) 0x33FFFF,
                      (Uint16 *) 0x300000, (Uint16 *) 0x307FFF };
 
 extern Uint32 Flash_CPUScaleFactor;
+extern Uint16 upgrade_flag;
 
 enum FLOW
 {
@@ -80,8 +81,7 @@ enum FLOW
     checkSum = 0x17,
     program = 0x18,
     verify = 0x19,
-    changeUpdateFlag = 0x1A,
-    resetDSP = 0x1B
+    resetDSP = 0x1A
 };
 enum FLOW update_flow = handshake;
 
@@ -130,6 +130,7 @@ void FlashUpdate()
             switch (receive_msg.data.byte.b0)
             {
             case handshake:
+                upgrade_flag = 1;  //置升级标志
                 data.byte.b1 = 0x55;  //握手成功
                 break;
             case unlockCSM:
@@ -147,7 +148,7 @@ void FlashUpdate()
                 break;
             case toggle:
                 // Example: Toggle GPIO0
-                Example_ToggleTest(0);
+                //Example_ToggleTest(0);
                 data.byte.b1 = 0x55;
                 break;
             case version:
@@ -157,7 +158,7 @@ void FlashUpdate()
                 break;
             case erase:
                 status = Flash_Erase((SECTORC|SECTORD|SECTORE), &FlashStatus);
-                flash_ptr = Sector[2].StartAddr;
+                flash_ptr = Sector[4].StartAddr;
                 if (status == STATUS_SUCCESS)
                 {
                     data.byte.b1 = 0x55;
@@ -199,10 +200,9 @@ void FlashUpdate()
                 }
                 break;
             case program:
-                if ((flash_ptr + length) >= Sector[4].EndAddr)
+                if ((flash_ptr + length) <= Sector[1].StartAddr)
                 {
                     status = Flash_Program(flash_ptr, buffer, length, &FlashStatus);
-                    flash_ptr += length;
                     if (status == STATUS_SUCCESS)
                     {
                         data.byte.b1 = 0x55;
@@ -221,15 +221,13 @@ void FlashUpdate()
                 status = Flash_Verify(flash_ptr, buffer, length, &FlashStatus);
                 if (status == STATUS_SUCCESS)
                 {
+                    flash_ptr += length;
                     data.byte.b1 = 0x55;
                 }
                 else
                 {
                     data.byte.b1 = 0x0;
                 }
-                break;
-            case changeUpdateFlag:  //不是必须？
-                data.byte.b1 = 0x55;
                 break;
             case resetDSP:
                 data.byte.b1 = 0x55;

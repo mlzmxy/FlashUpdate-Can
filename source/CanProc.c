@@ -12,15 +12,9 @@
 #include "project.h"
 
 //---------------------------------------------------------------------------
-// Const Variables
-//
-const can_msg can_msg_0 = {{0}, 0, {0, 0}};  //can消息初始值
-
-//---------------------------------------------------------------------------
 // Variables
 //
 can_msg receive_msg = {{0}, 0, {0, 0}};  //接收的CAN消息
-
 
 /* CAN Interrupt Function */
 interrupt void ecan0a_isr()
