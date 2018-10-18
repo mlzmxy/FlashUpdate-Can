@@ -110,8 +110,7 @@ extern can_msg receive_msg;
 //---------------------------------------------------------------------------
 // Prototype for Functions
 //
-void Cana_send_data(can_msg_data* data);
-void Canb_send_data(can_msg_data* data);
+void Can_send_data(can_msg_data* data);
 
 /* prototype for interrupt functions */
 interrupt void ecan0a_isr();

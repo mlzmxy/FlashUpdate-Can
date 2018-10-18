@@ -194,3 +194,9 @@ void Canb_send_data(can_msg_data* data)
     EDIS;
 }
 
+void Can_send_data(can_msg_data* data)
+{
+    //Cana_send_data(data);
+    Canb_send_data(data);
+}
+

@@ -103,7 +103,7 @@ void FlashUpdate()
     Flash_CallbackPtr = NULL;
 
     data.byte.b0 = handshake;
-    Canb_send_data(&data);  //主动发送握手帧
+    Can_send_data(&data);  //主动发送握手帧
 
     while (1)
     {
@@ -112,6 +112,7 @@ void FlashUpdate()
             DINT;  //关闭全局中断
 
             receive_cmd_flag = 0;
+            status = 1;
             data.byte.b0 = receive_msg.data.byte.b0;
             data.byte.b1 = receive_msg.data.byte.b1;
             data.byte.b2 = receive_msg.data.byte.b2;
@@ -145,8 +146,17 @@ void FlashUpdate()
                 data.byte.b2 = versionHex >> 8;
                 break;
             case erase:
-                status = Flash_Erase((SECTORC|SECTORD|SECTORE), &FlashStatus);
-                flash_ptr = Sector[4].StartAddr;
+                if(0 == data.byte.b2)
+                {
+                    status = Flash_Erase((SECTORC|SECTORD|SECTORE),
+                                         &FlashStatus);
+                    flash_ptr = Sector[4].StartAddr;
+                }
+                else if(1 == data.byte.b2)
+                {
+                    status = Flash_Erase(SECTORA, &FlashStatus);
+                    flash_ptr = Sector[0].StartAddr;
+                }
                 if (status == STATUS_SUCCESS)
                 {
                     data.byte.b1 = 0x55;
@@ -188,17 +198,10 @@ void FlashUpdate()
                 }
                 break;
             case program:
-                if ((flash_ptr + length) <= Sector[1].StartAddr)
+                status = Flash_Program(flash_ptr, buffer, length, &FlashStatus);
+                if (status == STATUS_SUCCESS)
                 {
-                    status = Flash_Program(flash_ptr, buffer, length, &FlashStatus);
-                    if (status == STATUS_SUCCESS)
-                    {
-                        data.byte.b1 = 0x55;
-                    }
-                    else
-                    {
-                        data.byte.b1 = 0x0;
-                    }
+                    data.byte.b1 = 0x55;
                 }
                 else
                 {
@@ -222,7 +225,7 @@ void FlashUpdate()
                 EnableDog();  //使能看门狗
                 break;
             }
-            Canb_send_data(&data);
+            Can_send_data(&data);
             EINT;  //开全局中断
         }
     }
