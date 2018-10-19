@@ -134,9 +134,6 @@ SECTIONS
                          LOAD_END(_RamfuncsLoadEnd),
                          RUN_START(_RamfuncsRunStart),
                          PAGE = 0   
-
-   csmpasswds          : > CSM_PWL     PAGE = 0
-   csm_rsvd            : > CSM_RSVD    PAGE = 0
    
    /* Allocate uninitalized data sections: */
    .stack              : > RAMM1       PAGE = 1

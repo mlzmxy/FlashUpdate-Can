@@ -20,9 +20,9 @@
 /*---- Flash API include file -------------------------------------------------*/
 #include "Flash2833x_API_Library.h"
 
-/*---- example include file ---------------------------------------------------*/
-#include "Example_Flash2833x_API.h"
+#include "UpgradeFlash.h"
 
+/*---- example include file ---------------------------------------------------*/
 #include "CanProc.h"
 #include "CRC16.h"
 #include "project.h"

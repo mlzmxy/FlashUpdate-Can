@@ -10,8 +10,7 @@
 
 #include "Flash2833x_API_Config.h"    // F2833x Flash User Settings
 #include "Flash2833x_API_Library.h"   // Flash API include file
-#include "Example_Flash2833x_API.h"   // example include file
-
+#include "UpgradeFlash.h"
 #include "CanProc.h"
 
 #include <stdio.h>   // Standard headers
@@ -58,7 +57,7 @@ void main(void)
     PieCtrlRegs.PIECTRL.bit.ENPIE = 1;  //enable PIE
     PieCtrlRegs.PIEIER1.bit.INTx7 = 1;  //CpuTimer0
     PieCtrlRegs.PIEIER9.bit.INTx5 = 1;  //ECAN0INTA  eCANA
-    PieCtrlRegs.PIEIER9.bit.INTx7 = 1;  //ECAN0INTB  eCANB
+    //PieCtrlRegs.PIEIER9.bit.INTx7 = 1;  //ECAN0INTB  eCANB
 
     IER |= M_INT1;  // Enable CPU Interrupt 1 - CpuTimer0
     IER |= M_INT9;  // Enable CPU Interrupt 9 - CAN
